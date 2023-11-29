@@ -4,7 +4,11 @@
 
 You can access the environment in the following ways:
 
-=== "Showroom" Terminal
+* <<Showroom Terminal>>
+* <<SSH from your laptop to the bastion host>>
+* <<Run commands from your laptop>>
+
+=== Showroom Terminal
 
 Use the Terminal on the right side of "showroom" interface.
 
@@ -16,7 +20,16 @@ If not, notify your instructor.
 
 Go ahead and use your favorite terminal on your laptop to access the bastion host.
 
-{ssh_command}
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+{bastion_ssh_command}
+----
+
+.Bastion SSH password
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+{bastion_ssh_password}
+----
 
 === Run commands from your laptop
 
@@ -29,40 +42,43 @@ Go ahead and use your favorite terminal on your laptop to access the bastion hos
 NOTE: See https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-macos[Azure Docs] for alternative install options.
 
 . Install OpenShift CLI using homebrew
-
-[source,bash,]
++
+[source,bash,subs="+macros,+attributes",role=execute]
 ----
 brew update && brew install openshift-cli
 ----
-
++
 . Install Azure CLI using homebrew
-
-[source,bash,]
++
+[source,bash,subs="+macros,+attributes",role=execute]
 ----
 brew update && brew install azure-cli
 ----
-
++
 . Install sshuttle using homebrew
-
-[source,bash,]
++
+[source,bash,subs="+macros,+attributes",role=execute]
 ----
 brew install sshuttle
 ----
 
-=== On Your Linux Laptop (bastion already has it installed)
+=== On Your Linux Laptop
+
+WARNING: The bastion already has this tools installed.
+Skip this if youa re using the bastion.
 
 NOTE: See https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-linux?pivots=dnf[Azure Docs] for alternative install options.
 
 . Import the Microsoft Keys
-
-[source,bash]
++
+[source,bash,subs="+macros,+attributes",role=execute]
 ----
 sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
 ----
-
++
 . Add the Microsoft Yum Repository
-
-[source,bash]
++
+[source,bash,subs="+macros,+attributes",role=execute]
 ----
 cat << EOF | sudo tee /etc/yum.repos.d/azure-cli.repo
 [azure-cli]
@@ -73,17 +89,17 @@ gpgcheck=1
 gpgkey=https://packages.microsoft.com/keys/microsoft.asc
 EOF
 ----
-
++
 . Install Azure CLI
-
-[source,bash]
++
+[source,bash,subs="+macros,+attributes",role=execute]
 ----
 sudo dnf install -y azure-cli sshuttle
 ----
-
++
 . Install OpenShift CLI
-
-[source,bash]
++
+[source,bash,subs="+macros,+attributes",role=execute]
 ----
 curl -LO https://mirror.openshift.com/pub/openshift-v4/amd64/clients/ocp/latest/openshift-client-linux.tar.gz
 tar xvzf openshift-client-linux.tar.gz
@@ -129,36 +145,51 @@ Kustomize Version: v5.0.1
 == Prepare Azure Account for ARO
 
 . Set Environment Variables for Azure
-
++
+NOTE: Or equivalent for your shell
++
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
+echo \<<EOF>> ~/.bashrc
 export GUID={guid}
 export AZR_SP_ID={azure_service_principal_id}
 export AZR_SP_PASS='{azure_service_principal_password}'
 export AZR_TENANT_ID={azure_tenant}
 export AZR_RESOURCE_GROUP=openenv-{guid}
 export AZ_SUB_ID={azure_subscription}
+export AZR_RESOURCE_LOCATION=eastus
+export AZR_PULL_SECRET=~/Downloads/pull-secret.txt
+EOF
+source ~/.bashrc
 ----
-
++
 . Log into the Azure CLI by running the following and then authorizing through your Web Browser
-
-[source,bash,role=execute]
++
+[source,bash,subs="+macros,+attributes",role=execute],role=execute]
 ----
-az login --subscription $AZ_SUB_ID
+az login
+az account set --subscription $AZ_SUB_ID
 ----
-
++
+. Set the default location to `East US`
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+az configure --defaults location=$AZR_RESOURCE_LOCATION
+----
++
 . Make sure you have enough Quota (change the location if you're not using `East US`)
-
-[source,bash,role=execute]
++
+[source,bash,subs="+macros,+attributes",role=execute],role=execute]
 ----
-az vm list-usage --location "East US" -o table
+az vm list-usage -o table | grep " DSv3"
 ----
-
-see <<adding-quota-to-aro-account>> if you have less than `36` Quota left for `Total Regional vCPUs`.
-
++
+WARNING: See <<Adding Quota to ARO account>> if you have less than `100` Quota left for `Total Regional vCPUs`.
++
 . Register Resource Providers
-
-[source,bash]
++
+[source,bash,subs="+macros,+attributes",role=execute]
 ----
 az provider register -n Microsoft.RedHatOpenShift --wait
 az provider register -n Microsoft.Compute --wait
@@ -169,7 +200,28 @@ az provider register -n Microsoft.Authorization --wait
 === Get Red Hat Pull Secret
 
 . Log into cloud.redhat.com
-
 . Browse to https://cloud.redhat.com/openshift/install/azure/aro-provisioned
+. Click the *Download pull secret* button
+. Copy the file to `~/Downloads/pull-secret.txt`
 
-. click the *Download pull secret* button and remember where you saved it, you'll reference it later.
+== Addendum
+
+=== Adding Quota to ARO account
+
+image::../../images/aro-quota-request.png[ARO Console "My Quotas" page with cursor hovering over "Request Adjustment" pencil for a quota named "Total Regional vCPUs"]
+
+. https://portal.azure.com/#view/Microsoft_Azure_Capacity/QuotaMenuBlade/~/myQuotas[Visit *My Quotas* in the Azure Console]
+. Choose the appropriate filters:
+.. Set *Provider* to "Compute"
+.. Set *Subscription* to the subscription you are creating the cluster in
+.. Set *Region* to "East US" and uncheck the other region boxes
+. Search for the quota name that you want to increase.
+This may be "Total Regional vCPUs" if you checked that prior to creating the cluster, or it may be a specific resource quota named in a `ResourceQuotaExceeded` error message.
+Note that in the latter case, the Azure console uses a localized display name (for example `Standard DSv3 Family vCPUs` rather than an identifier name `standardDSv3Family` mentioned in the error message.
+. Next to the quota name you wish to increase, click the pencil in the Adjustable column to request adjustment
+. Enter the new desired quota in the *New limit* text box.
+By default, a cluster will need 36 additional Regional vCPUs beyond current usage, or the `ResourceQuotaExceeded` error message will tell you how much more of an additional resource is needed.
+. Click *Submit*.
+You may need to go through additional authentication.
+. Azure will review your request to adjust your quota.
+This may take several minutes.
