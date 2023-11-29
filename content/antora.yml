@@ -6,14 +6,7 @@ nav:
 
 asciidoc:
   attributes:
-    lab_name: "I'm the lab_name var"
-    release-version: master
-    page-pagination: true
-    my_var: "foo - this is an asciidoc attribute from `content/antora.yml`"
     guid: my-guid
-    ssh_user: devops
-    ssh_password: devops
-    ssh_command: ssh devops@bastion.{guid}.example.opentlc.com
 
   extensions:
     - ./content/lib/tab-block.js

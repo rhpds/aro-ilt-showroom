@@ -1,10 +1,27 @@
 .Home
 * xref:home.adoc[Home]
+* xref:.adoc[]
 
 .100-setup
-* xref:100-setup/private-cluster.adoc[Deploy Private ARO Cluster]
+* xref:100-setup/enviroment-setup.adoc[Environment Setup]
+* xref:100-setup/custom-domain-private-cluster.adoc[Deploying Private ARO clusters with Custom Domains]
+// aro/custom-domain-private-cluster/index.md
+* xref:100-setup/cert-manager.adoc[Cluster Install: ARO Custom domain with cert-manager and LetsEncrypt]
+// /aro/cert-manager/index.md
+* xref:100-setup/azuread-aro.adoc[Configure ARO to use Azure AD]
+// /idp/azuread-aro/index.md
+* xref:100-setup/azure-key-vault.adoc[Key Vault CSI]
+// /misc/secrets-store-csi/azure-key-vault/index.md
 
 .200-ops
+* xref:100-setup/azure-key-vault.adoc[Adding an additional ingress controller to an ARO cluster]
+// aro/additional-ingress-controller/index.md
+* xref:200-ops/acr.adoc[Using Azure Container Registry in Private ARO clusters]
+// aro/aro-acr/index.md
+* xref:200-ops/frontdoor.adoc[Azure Front Door with ARO]
+// aro/aro-frontdoor/index.md
+* xref:200-ops/add-infra-nodes.adoc[Adding infrastructure nodes to an ARO cluster]
+// aro/add-infra-nodes/index.md
 
 .300-app
 
