@@ -150,7 +150,7 @@ NOTE: Or equivalent for your shell
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-echo \<<EOF>> ~/.bashrc
+cat << EOF >> ~/.bashrc
 export GUID={guid}
 export AZR_SP_ID={azure_service_principal_id}
 export AZR_SP_PASS='{azure_service_principal_password}'
