@@ -197,12 +197,12 @@ az provider register -n Microsoft.Storage --wait
 az provider register -n Microsoft.Authorization --wait
 ----
 
-=== Get Red Hat Pull Secret
+== Get Red Hat Pull Secret
 
 . Log into cloud.redhat.com
 . Browse to https://cloud.redhat.com/openshift/install/azure/aro-provisioned[https://cloud.redhat.com/openshift/install/azure/aro-provisioned^]
 . Click the *Download pull secret* button
-. Copy the file to `~/Downloads/pull-secret.txt`
+. Copy the file to `~/Downloads/pull-secret.txt` wherever you are running the `az` command line tools
 
 == Addendum
 
