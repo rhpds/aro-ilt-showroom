@@ -49,8 +49,7 @@ brew update && brew install azure-cli
 brew install sshuttle
 ----
 
-=== Linux
-
+=== On Your Linux Laptop (bastion already has it installed)
 
 NOTE: See https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-linux?pivots=dnf[Azure Docs] for alternative install options.
 

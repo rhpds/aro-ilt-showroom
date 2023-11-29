@@ -1,5 +1,5 @@
 .Home
-* xref:home.adoc[Home]
+* xref:index.adoc[Home]
 
 .100-setup
 * xref:100-setup/environment-setup.adoc[Environment Setup]
