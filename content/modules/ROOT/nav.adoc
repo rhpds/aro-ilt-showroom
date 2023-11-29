@@ -4,9 +4,9 @@
 .100-setup
 * xref:100-setup/environment-setup.adoc[Environment Setup]
 * xref:100-setup/custom-domain-private-cluster.adoc[Deploying Private ARO clusters with Custom Domains]
-* xref:100-setup/cert-manager.adoc[Cluster Install: ARO Custom domain with cert-manager and LetsEncrypt]
 * xref:100-setup/azuread-aro.adoc[Configure ARO to use Azure AD]
 * xref:100-setup/azure-key-vault.adoc[Key Vault CSI]
+
 // aro/custom-domain-private-cluster/index.md
 // /aro/cert-manager/index.md
 // /idp/azuread-aro/index.md
@@ -21,7 +21,3 @@
 // aro/additional-ingress-controller/index.md
 // aro/aro-frontdoor/index.md
 // aro/add-infra-nodes/index.md
-
-.300-app
-
-.500-service-mesh
