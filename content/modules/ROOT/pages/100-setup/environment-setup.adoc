@@ -213,17 +213,24 @@ az provider register -n Microsoft.Authorization --wait
 
 image::aro-quota-request.png[ARO Console "My Quotas" page with cursor hovering over "Request Adjustment" pencil for a quota named "Total Regional vCPUs"]
 
+. Find the name of your subscription
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+az account show --subscription $AZ_SUB_ID --query name -o tsv
+----
++
 . https://portal.azure.com/#view/Microsoft_Azure_Capacity/QuotaMenuBlade/~/myQuotas[Visit *My Quotas* in the Azure Console^]
 . Choose the appropriate filters:
 .. Set *Provider* to "Compute"
-.. Set *Subscription* to the subscription you are creating the cluster in
+.. Set *Subscription* to the name of the subscription you are creating the cluster in
 .. Set *Region* to "East US" and uncheck the other region boxes
 . Search for the quota name that you want to increase.
 This may be "Total Regional vCPUs" if you checked that prior to creating the cluster, or it may be a specific resource quota named in a `ResourceQuotaExceeded` error message.
 Note that in the latter case, the Azure console uses a localized display name (for example `Standard DSv3 Family vCPUs` rather than an identifier name `standardDSv3Family` mentioned in the error message.
 . Next to the quota name you wish to increase, click the pencil in the Adjustable column to request adjustment
 . Enter the new desired quota in the *New limit* text box.
-By default, a cluster will need 36 additional Regional vCPUs beyond current usage, or the `ResourceQuotaExceeded` error message will tell you how much more of an additional resource is needed.
+By default, a cluster will need 36 additional Regional vCPUs beyond current usage, but to complete all of the labs, you should ensure 100 vCPUs are available. In the case where you have gotten `ResourceQuotaExceeded` error message, the message will tell you how much more of an additional resource is needed.
 . Click *Submit*.
 You may need to go through additional authentication.
 . Azure will review your request to adjust your quota.
