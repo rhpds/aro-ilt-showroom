@@ -90,7 +90,7 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc
 EOF
 ----
 +
-. Install Azure CLI
+. Install Azure CLI and sshuttle
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
