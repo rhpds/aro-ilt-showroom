@@ -55,11 +55,11 @@ brew update && brew install openshift-cli
 brew update && brew install azure-cli
 ----
 +
-. Install sshuttle using homebrew
+. Install sshuttle and helm using homebrew
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-brew install sshuttle
+brew install sshuttle helm
 ----
 
 === On Your Linux Laptop
@@ -104,6 +104,15 @@ sudo dnf install -y azure-cli sshuttle
 curl -LO https://mirror.openshift.com/pub/openshift-v4/amd64/clients/ocp/latest/openshift-client-linux.tar.gz
 tar xvzf openshift-client-linux.tar.gz
 sudo mv oc kubectl /usr/local/bin/
+----
++
+. Install Helm
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
 ----
 
 == Validate Command Line Tools
