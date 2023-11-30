@@ -33,12 +33,21 @@ sudo yum install -y certbot
 
 * https://github.com/sshuttle/sshuttle#obtaining-sshuttle[sshutle]
 
-.. Install Sshuttle on the Bastion Host
+.. Install Sshuttle on your laptop
+
+... Linux
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 sudo yum install -y "https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm"
 sudo yum install -y sshuttle
+----
+
+... Mac
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+brew install sshuttle
 ----
 
 . Set and verify the following environment variables
@@ -203,7 +212,24 @@ echo $JUMP_IP
 echo "JUMP_IP=$JUMP_IP" >> ~/.bashrc
 ----
 
-. Use `sshuttle` to Create a SSH VPN via the Jump Host as a Daemon
+. Use `sshuttle` on your Laptop to Create a SSH VPN via the Jump Host as a Daemon
++
+****
+If you are using the bastion to interact with Azure instead of your laptop, setup the following on your laptop
+
+. Copy the private key that was generated above to your laptop `~/.ssh/jumphost.pem`
+. Add it to `~/.ssh/config`
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+Host <ip address of jumphost>
+  IdentityFile ~/.ssh/jumphost.pem
+----
+****
++
+. Run sshuttle
++
+NOTE: Make sure you can `ssh aro@$JUMP_IP` with no password.
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
@@ -369,11 +395,11 @@ certbot certonly --manual \
   --logs-dir "$SCRATCH_DIR/logs" \
   -d "*.apps.$DOMAIN"
 ----
-
++
 NOTE: Take note of the Domain and TXT value fields as these are required for Let's Encrypt to validate that you own the domain and can therefore issue you the certificates.
 +
-WARNING: don't close or interrupt this process, we will finish after the dns challenge with.
-
+WARNING: Don't close or interrupt this process, we will finish after the dns challenge with.
++
 . Use your mouse to copy the text record VALUE
 +
 .Example
