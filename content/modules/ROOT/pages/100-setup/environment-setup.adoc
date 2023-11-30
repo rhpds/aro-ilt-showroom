@@ -151,7 +151,6 @@ NOTE: Or equivalent for your shell
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 cat << EOF >> ~/.bashrc
-export GUID={guid}
 export AZR_SP_ID={azure_service_principal_id}
 export AZR_SP_PASS='{azure_service_principal_password}'
 export AZR_TENANT_ID={azure_tenant}
@@ -168,6 +167,12 @@ source ~/.bashrc
 [source,bash,subs="+macros,+attributes",role=execute],role=execute]
 ----
 az login
+----
++
+. Set into your Subscription
++
+[source,bash,subs="+macros,+attributes",role=execute],role=execute]
+----
 az account set --subscription $AZ_SUB_ID
 ----
 +

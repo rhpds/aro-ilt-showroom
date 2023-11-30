@@ -17,29 +17,49 @@ Furthermore, if we choose Custom DNS, after connecting to the cluster, we will n
 
 == Prerequisites
 
-. Tools
+. Set Up Necessary Tools
 
 * https://certbot.eff.org/[Certbot]
+
+.. Setup certbot on the Bastion Host
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+sudo yum install -y "https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm"
+sudo yum install -y certbot
+----
+
 * https://learn.microsoft.com/en-us/cli/azure/install-azure-cli[AZ CLI]
+
 * https://github.com/sshuttle/sshuttle#obtaining-sshuttle[sshutle]
 
-. Set or verify the following environment variables:
+.. Install Sshuttle on the Bastion Host
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+sudo yum install -y "https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm"
+sudo yum install -y sshuttle
+----
+
+. Set and verify the following environment variables
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 cat << EOF >> ~/.bashrc
+export DOMAIN=aro.private.$GUID.azure.redhatworkshops.io <1>
+export DOMAIN_PARENT=private.$GUID.azure.redhatworkshops.io <1>
 export NETWORK_SUBNET=10.0.0.0/20
 export CONTROL_SUBNET=10.0.0.0/24
 export MACHINE_SUBNET=10.0.1.0/24
 export JUMPHOST_SUBNET=10.0.3.0/24
 export NAMESPACE=aro-custom-domain
 export AZR_CLUSTER=aro-custom-private-cluster-$GUID
-export DOMAIN="aroplay.openshiftdemo.dev"
-export AZR_DNS_RESOURCE_GROUP="dns-rg-$GUID"
+export AZR_DNS_RESOURCE_GROUP="openenv-$GUID"
 export EMAIL=username.taken@gmail.com
 EOF
 source ~/.bashrc
 ----
+<1> Note the _private_ custom domain `aro.private.$GUID.azure.redhatworkshops.io`
 
 == ARO Cluster Networking
 
@@ -111,12 +131,19 @@ ____
 When the --domain flag with an FQDN (e.g. my.domain.com) is used to create your cluster you will need to configure DNS and a certificate authority for your API server and apps ingress. This will be done once we establish connectivity to the cluster.
 ____
 +
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+tmux
+----
++
+. Deploy the ARO cluster
++
 WARNING: The next step takes over 45 minutes to complete.
 It's best to start `tmux` in case you are disconnected.
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-tmux
+
 az aro create \
   --resource-group $AZR_RESOURCE_GROUP \
   --name $AZR_CLUSTER \
@@ -129,10 +156,12 @@ az aro create \
   --domain $DOMAIN
 ----
 
-=== Jumphost
+=== Deploy Jumphost During Cluster Installation
 
 As the cluster operates within a private network, it is possible to create a jumphost during the cluster creation process.
 This jumphost serves as a secure gateway that allows authorized users to connect to the private cluster environment.
+
+. Open a additional terminal with tmux by pressing kbd:[CTRL+b] then kbd:[c]
 
 . Create Jumphost Subnet
 +
@@ -148,6 +177,8 @@ az network vnet subnet create                                \
 
 . Create a Jumphost
 +
+WARNING: This takes several minutes to complete
++
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 az vm create --name jumphost               \
@@ -158,6 +189,7 @@ az vm create --name jumphost               \
   --subnet JumpSubnet                      \
   --public-ip-address jumphost-ip          \
   --public-ip-sku Standard                 \
+  --generate-ssh-keys                      \
   --vnet-name "$AZR_CLUSTER-aro-vnet-$AZR_RESOURCE_LOCATION"
 ----
 
@@ -168,6 +200,7 @@ az vm create --name jumphost               \
 JUMP_IP=$(az vm list-ip-addresses -g $AZR_RESOURCE_GROUP -n jumphost -o tsv \
   --query '[].virtualMachine.network.publicIpAddresses[0].ipAddress')
 echo $JUMP_IP
+echo "JUMP_IP=$JUMP_IP" >> ~/.bashrc
 ----
 
 . Use `sshuttle` to Create a SSH VPN via the Jump Host as a Daemon
@@ -177,9 +210,29 @@ echo $JUMP_IP
 sshuttle --dns -NHr "aro@${JUMP_IP}"  10.0.0.0/8 --daemon
 ----
 
+. Return to the first terminal with the ARO installation to see if installation has finished by pressing kbd:[CTRL+b] then kbd:[n]
+
+. It has not finished.
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+\ Running ..
+----
+
+. Hit kbd:[CTRL+b] then kbd:[n] again to return to your second terminal.
+
+. HOWEVER! If values you need are already available, `az aro` will report them.
+ONWARDS!
+
 == Configure DNS for the Private ARO Cluster (Ingress Router and API)
 
-Properly configuring DNS for the default ingress router, API server endpoint, and associated routes such as the console and *.apps is of utmost importance.
+////
+WARNING: You must wait for ARO to complete installation before proceeding.
+Have a beverage. 🫖
+Hydration is important for health. pass:[&#128161;]
+////
+
+It is of utmost important to properly configure DNS for the default ingress router, API server endpoint, and associated routes such as the console and *.apps.
 
 These DNS configurations ensure easy access to the cluster's console, application routes, and APIs, facilitating smooth administration and interaction with the OpenShift/Kubernetes environment.
 
@@ -194,6 +247,8 @@ We need to configure the DNS for the Default Ingress Router (*.apps), to be able
 INGRESS_IP="$(az aro show -n $AZR_CLUSTER -g $AZR_RESOURCE_GROUP --query 'ingressProfiles[0].ip' -o tsv)"
 
 echo $INGRESS_IP
+
+echo "INGRESS_IP=$INGRESS_IP" >> ~/.bashrc
 ----
 
 ==== Apps/Console Public Zone Ingress Configuration
@@ -205,9 +260,14 @@ You need to have configured your domain name registrar to point to this zone.
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-az network dns zone create -g $RESOURCEGROUP -n $DOMAIN
+az network dns zone create \
+  -g $AZR_RESOURCE_GROUP \
+  -n $DOMAIN
 
-az network dns zone create --parent-name $DOMAIN -g $AZR_DNS_RESOURCE_GROUP -n $DOMAIN
+az network dns zone create \
+  --parent-name $DOMAIN_PARENT \
+  -g $AZR_DNS_RESOURCE_GROUP \
+  -n $DOMAIN
 ----
 
 . Add a record type A pointing the "*.apps.DOMAIN" to the Ingress LB IP, that is the Azure LB that balances the ARO/OpenShift Routers (Haproxies)
@@ -225,7 +285,11 @@ az network dns record-set a add-record \
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-az network dns record-set a update -g $AZR_DNS_RESOURCE_GROUP -z $DOMAIN -n '*.apps' --set ttl=300
+az network dns record-set a update \
+  -g $AZR_DNS_RESOURCE_GROUP \
+  -z $DOMAIN \
+  -n '*.apps' \
+  --set ttl=300
 ----
 
 . Test the *.apps Domain
@@ -235,7 +299,7 @@ az network dns record-set a update -g $AZR_DNS_RESOURCE_GROUP -z $DOMAIN -n '*.a
 dig +short test.apps.$DOMAIN
 ----
 
-=== 2.2 Configure DNS for API server endpoint
+=== Configure DNS for API server endpoint
 
 We need to configure the DNS for the Kubernetes / OpenShift API of the ARO cluster, to be able to access to the ARO API.
 
@@ -245,6 +309,7 @@ We need to configure the DNS for the Kubernetes / OpenShift API of the ARO clust
 ----
 API_SERVER_IP="$(az aro show -n $AZR_CLUSTER -g $AZR_RESOURCE_GROUP --query 'apiserverProfile.ip' -o tsv)"
 echo $API_SERVER_IP
+echo "API_SERVER_IP=$API_SERVER_IP" >> ~/.bashrc
 ----
 
 . Create an `api` A record to point to the Ingress Load Balancer IP:
@@ -260,6 +325,7 @@ az network dns record-set a add-record \
 
 . Optional (good for initial testing): Adjust default TTL from 1 hour (choose an appropriate value, here 5 mins is used)
 +
+[source,bash,subs="+macros,+attributes",role=execute]
 ----
 az network dns record-set a update \
   -g $AZR_DNS_RESOURCE_GROUP \
@@ -270,6 +336,7 @@ az network dns record-set a update \
 
 . Test the api domain:
 +
+[source,bash,subs="+macros,+attributes",role=execute]
 ----
 dig +short api.$DOMAIN
 ----
@@ -303,11 +370,19 @@ certbot certonly --manual \
   -d "*.apps.$DOMAIN"
 ----
 
-. Take note of the Domain and TXT value fields as these are required for Let's Encrypt to validate that you own the domain and can therefore issue you the certificates.
+NOTE: Take note of the Domain and TXT value fields as these are required for Let's Encrypt to validate that you own the domain and can therefore issue you the certificates.
 +
-NOTE: don't close or interrupt this process, we will finish after the dns challenge with.
+WARNING: don't close or interrupt this process, we will finish after the dns challenge with.
 
-. Open a second terminal ith tmux by pressing kbd:[CTRL+b] then kbd:[c]
+. Use your mouse to copy the text record VALUE
++
+.Example
+----
+InY85UGzpDLOiS_xpLp-EXAMPLEzfM47BTAJCx2lN6sA
+----
+
+. Switch to the other tmux window with kbd:[CTRL+b] then kbd:[n]
+
 . Paste the DNS_Challenge in the following environment variable
 +
 [source,bash,subs="+macros,+attributes",role=execute]
@@ -315,7 +390,7 @@ NOTE: don't close or interrupt this process, we will finish after the dns challe
 export APPS_TXT_RECORD="xxxx"
 ----
 
-. You can add the necessary records to validate ownership of the apps domain
+. Add the necessary records to validate ownership of the apps domain
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
@@ -345,7 +420,15 @@ dig +short TXT _acme-challenge.apps.$DOMAIN
 ----
 
 . Return to the first terminal with tmux by pressing kbd:[CTRL+b] then kbd:[n]
-. Finish the generation of the apps certificate PKIs for the ARO cluster
+
+. Finish the generation of the apps certificate PKIs for the ARO cluster by pressing kbd:[Enter]
++
+.Example
+----
+Press Enter to Continue
+
+Successfully received certificate.
+----
 
 === Generate LE Certs for the API
 
@@ -369,7 +452,7 @@ certbot certonly --manual \
 ----
 
 . Open the second terminal from earlier by pressing kbd:[CTRL+b] then kbd:[n]
-. Paste the DNS_Challenge:
+. Paste the DNS_Challenge value:
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
@@ -405,7 +488,14 @@ az network dns record-set txt update \
 dig +short TXT _acme-challenge.api.$DOMAIN
 ----
 
-. Return to the first terminal (where the certbot is), and finish the generation of the API certificate PKIs for the ARO cluster.
+. Return to the first terminal (where the certbot is) with kbd:[CTRL+b] then kbd:[n], and finish the generation of the API certificate PKIs for the ARO cluster by hitting kbd:[Enter]
++
+.Example
+----
+Press Enter to Continue
+
+Successfully received certificate.
+----
 
 === Configure the Ingress Router with custom certificates
 
@@ -421,6 +511,9 @@ After you replace the certificate, all applications, including the web console a
 ----
 AROPASS=$(az aro list-credentials --name $AZR_CLUSTER --resource-group $AZR_RESOURCE_GROUP -o tsv --query kubeadminPassword)
 AROURL=$(az aro show -g $AZR_RESOURCE_GROUP -n $AZR_CLUSTER --query apiserverProfile.url -o tsv)
+
+echo "export AROPASS=$AROPASS" >> ~/.bashrc
+echo "export AROURL=$AROURL" >> ~/.bashrc
 ----
 
 . Login to the ARO cluster with oc CLI:
@@ -470,14 +563,18 @@ oc patch ingresscontroller.operator default \
   -n openshift-ingress-operator
 ----
 
-. Check the OpenShift Ingress pods:
+. Check the OpenShift Ingress pods by watching the pods restart in the openshift-ingress namespace
 +
+[source,bash,subs="+macros,+attributes",role=execute]
 ----
-oc get pod -n openshift-ingress
+watch "oc get pod -n openshift-ingress"
 ----
++
+Hit kbd:[CTRL+c] to exit when they've restarted.
 
-. Verify that your certificate it's correctly applied:
+. Verify that your certificate is correctly applied:
 +
+[source,bash,subs="+macros,+attributes",role=execute]
 ----
 echo | openssl s_client -connect console-openshift-console.apps.$DOMAIN:443 | openssl x509 -noout -text | grep Issuer
 ----
@@ -499,15 +596,18 @@ oc create secret tls api-custom-domain-cert \
 ----
 
 . Update the https://docs.openshift.com/container-platform/4.11/security/certificates/api-server.html[API server certificate] to reference the created secret.
-Patch the cluster's API server and **replace +++<DOMAIN>+++with your customer domain**:+++</DOMAIN>+++
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
+echo $DOMAIN
+
+bash <<EOF
 oc patch apiserver cluster \
   --type=merge -p \
   '{"spec":{"servingCerts":{"namedCertificates":
-  [{"names":["api.<DOMAIN>"],
+  [{"names":["api.$DOMAIN"],
   "servingCertificate":{"name":"api-custom-domain-cert"}}]}}}'
+EOF
 ----
 
 . Check the apiserver cluster CRD to check if the patch worked properly:
