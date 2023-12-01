@@ -835,8 +835,11 @@ echo | openssl s_client -connect console-openshift-console.apps.$DOMAIN:443 | op
 
 . Check that the Certificate when you access to the Console is the Cert issued by Let's Encrypt using Certbot:
 .. Get the OpenShift Console URL:
-
-
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+oc whoami --show-console
+----
 +
 image::aro-custom-domain.png[ARO Custom Domain]
 
