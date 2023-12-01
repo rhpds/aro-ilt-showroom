@@ -396,14 +396,15 @@ az vm create --name jumphost               \
   --vnet-name "$AZR_CLUSTER-aro-vnet-$AZR_RESOURCE_LOCATION"
 ----
 
-. Save the Jump Host Public IP Address
+. Save the jump host public IP address
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 JUMP_IP=$(az vm list-ip-addresses -g $AZR_RESOURCE_GROUP -n jumphost -o tsv \
-  --query '[].virtualMachine.network.publicIpAddresses[0].ipAddress')
+--query '[].virtualMachine.network.publicIpAddresses[0].ipAddress')
+export $JUMP_IP
 echo $JUMP_IP
-echo "JUMP_IP=$JUMP_IP" >> ~/.bashrc
+echo "export JUMP_IP=$JUMP_IP" >> $HOME/.bashrc
 ----
 
 . Use `sshuttle` on your Laptop to Create a SSH VPN via the Jump Host as a Daemon
