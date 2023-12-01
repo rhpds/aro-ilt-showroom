@@ -74,7 +74,7 @@ source ~/.bashrc
 
 Before deploying Azure Red Hat OpenShift (ARO), there are certain prerequisites that need to be fulfilled.
 
-=== Variables and Resource Group
+=== Create Resource Group for ARO Cluster
 
 . Create an Azure Resource Group:
 +
@@ -132,6 +132,140 @@ az network vnet subnet update                                       \
   --disable-private-link-service-network-policies true
 ----
 
+== Egress
+
+Public and Private clusters will have https://learn.microsoft.com/en-us/cli/azure/aro?view=azure-cli-latest#az-aro-create[--outbound-type] defined to LoadBalancer by default.
+It means all clusters by default have open egress to the internet through the public load balancer.
+
+If you want to change the default behavior to restrict the Internet Egress, you have to set `--outbound-type` during the creation of the cluster to `UserDefinedRouting` and use a Firewall solution from your choice of Azure native solutions like Azure Firewall or Azure NAT Gateway.
+
+=== Firewall + Internet Egress
+
+This replaces the routes for the cluster to go through the Firewall for egress vs the LoadBalancer.
+It does come with extra Azure costs of course.
+
+WARNING: This step will restrict egress.
+
+. Make sure you have the AZ CLI firewall extensions
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+az extension add -n azure-firewall
+az extension update -n azure-firewall
+----
+
+. Create a firewall network, IP, and firewall
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+az network vnet subnet create                                 \
+  -g $AZR_RESOURCE_GROUP                                      \
+  --vnet-name "$AZR_CLUSTER-aro-vnet-$AZR_RESOURCE_LOCATION"  \
+  -n "AzureFirewallSubnet"                                    \
+  --address-prefixes $FIREWALL_SUBNET
+
+az network public-ip create -g $AZR_RESOURCE_GROUP -n fw-ip   \
+  --sku "Standard" --location $AZR_RESOURCE_LOCATION
+
+az network firewall create -g $AZR_RESOURCE_GROUP             \
+  -n aro-private -l $AZR_RESOURCE_LOCATION
+----
+
+. Configure the firewall and configure IP Config (this may take 15 minutes)
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+az network firewall ip-config create -g $AZR_RESOURCE_GROUP    \
+  -f aro-private -n fw-config --public-ip-address fw-ip        \
+  --vnet-name "$AZR_CLUSTER-aro-vnet-$AZR_RESOURCE_LOCATION"
+----
+
+. Set firewall environment variables
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+FWPUBLIC_IP=$(az network public-ip show -g $AZR_RESOURCE_GROUP -n fw-ip --query "ipAddress" -o tsv)
+FWPRIVATE_IP=$(az network firewall show -g $AZR_RESOURCE_GROUP -n aro-private --query "ipConfigurations[0].privateIPAddress" -o tsv)
+
+echo "export FWPUBLIC_IP=$FWPUBLIC_IP" >> ~/.bashrc
+echo "export FWPRIVATE_IP=$FWPRIVATE_IP" >> ~/.bashrc
+----
+
+. Create and configure a route table
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+az network route-table create -g $AZR_RESOURCE_GROUP --name aro-udr
+
+sleep 10
+
+az network route-table route create -g $AZR_RESOURCE_GROUP --name aro-udr \
+  --route-table-name aro-udr --address-prefix 0.0.0.0/0                   \
+  --next-hop-type VirtualAppliance --next-hop-ip-address $FWPRIVATE_IP
+
+az network route-table route create -g $AZR_RESOURCE_GROUP --name aro-vnet   \
+  --route-table-name aro-udr --address-prefix 10.0.0.0/16 --name local-route \
+  --next-hop-type VirtualNetworkGateway
+----
+
+. Create firewall rules for ARO resources
++
+NOTE: Note: ARO clusters do not need access to the internet, however your own workloads running on them may.
+You can skip this step if you don't need any egress at all.
+
+** Create a Network Rule to allow all http/https egress traffic (not recommended)
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+az network firewall network-rule create -g $AZR_RESOURCE_GROUP -f aro-private \
+  --collection-name 'allow-https' --name allow-all                          \
+  --action allow --priority 100                                             \
+  --source-addresses '*' --dest-addr '*'                                    \
+  --protocols 'Any' --destination-ports 1-65535
+----
+
+** Create Application Rules to allow to a restricted set of destinations
++
+NOTE: replace the target-fqdns with your desired destinations
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+az network firewall application-rule create -g $AZR_RESOURCE_GROUP -f aro-private     \
+    --collection-name 'Allow_Egress'                                                  \
+    --action allow                                                                    \
+    --priority 100                                                                    \
+    -n 'required'                                                                     \
+    --source-addresses '*'                                                            \
+    --protocols 'http=80' 'https=443'                                                 \
+    --target-fqdns '*.google.com' '*.bing.com'
+
+az network firewall application-rule create -g $AZR_RESOURCE_GROUP -f aro-private     \
+    --collection-name 'Docker'                                                        \
+    --action allow                                                                    \
+    --priority 200                                                                    \
+    -n 'docker'                                                                       \
+    --source-addresses '*'                                                            \
+    --protocols 'http=80' 'https=443'                                                 \
+    --target-fqdns '*cloudflare.docker.com' '*registry-1.docker.io' 'apt.dockerproject.org' 'auth.docker.io'
+----
+
+. Update the subnets to use the Firewall
++
+Once the cluster is deployed successfully you can update the subnets to use the firewall instead of the default outbound loadbalancer rule.
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+az network vnet subnet update -g $AZR_RESOURCE_GROUP            \
+--vnet-name $AZR_CLUSTER-aro-vnet-$AZR_RESOURCE_LOCATION        \
+--name "$AZR_CLUSTER-aro-control-subnet-$AZR_RESOURCE_LOCATION" \
+--route-table aro-udr
+
+az network vnet subnet update -g $AZR_RESOURCE_GROUP            \
+--vnet-name $AZR_CLUSTER-aro-vnet-$AZR_RESOURCE_LOCATION        \
+--name "$AZR_CLUSTER-aro-machine-subnet-$AZR_RESOURCE_LOCATION" \
+--route-table aro-udr
+----
+
 === Create Private ARO Clusters with Custom Domain
 
 . Create Private ARO Cluster with Custom Domain
@@ -152,18 +286,49 @@ It's best to start `tmux` in case you are disconnected.
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-
+# DOMAIN install (plus UDR)
 az aro create \
   --resource-group $AZR_RESOURCE_GROUP \
   --name $AZR_CLUSTER \
   --vnet "$AZR_CLUSTER-aro-vnet-$AZR_RESOURCE_LOCATION" \
   --master-subnet "$AZR_CLUSTER-aro-control-subnet-$AZR_RESOURCE_LOCATION" \
   --worker-subnet "$AZR_CLUSTER-aro-machine-subnet-$AZR_RESOURCE_LOCATION" \
+  --outbound-type UserDefinedRouting \ <1>
   --apiserver-visibility Private \
   --ingress-visibility Private \
   --pull-secret @$AZR_PULL_SECRET \
   --domain $DOMAIN
+
+# PRIVATE one - why client-ids?
+
+. Create an Azure Service Principal
++
+[source,bash,subs="+macros,+attributes",role=execute]
 ----
+AZ_SUB_ID=$(az account show --query id -o tsv)
+AZ_SP_PASS=$(az ad sp create-for-rbac -n "${AZR_CLUSTER}-SP" --role contributor \
+  --scopes "/subscriptions/${AZ_SUB_ID}/resourceGroups/${AZR_RESOURCE_GROUP}" \
+  --query "password" -o tsv)
+AZ_SP_ID=$(az ad sp list --display-name "${AZR_CLUSTER}-SP" --query "[0].appId" -o tsv)
+----
+
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+az aro create                                                            \
+--resource-group $AZR_RESOURCE_GROUP                                     \
+--name $AZR_CLUSTER                                                      \
+--vnet "$AZR_CLUSTER-aro-vnet-$AZR_RESOURCE_LOCATION"                    \
+--master-subnet "$AZR_CLUSTER-aro-control-subnet-$AZR_RESOURCE_LOCATION" \
+--worker-subnet "$AZR_CLUSTER-aro-machine-subnet-$AZR_RESOURCE_LOCATION" \
+--apiserver-visibility Private                                           \
+--ingress-visibility Private                                             \
+--pull-secret @$AZR_PULL_SECRET                                          \
+--client-id "${AZ_SP_ID}"                                                \
+--client-secret "${AZ_SP_PASS}"
+----
+
+----
+<1> UserDefinedRouting is essential to Private Clusters
 
 === Deploy Jumphost During Cluster Installation
 
