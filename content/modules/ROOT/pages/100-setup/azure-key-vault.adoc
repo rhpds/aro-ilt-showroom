@@ -41,7 +41,7 @@ include::install-kubernetes-secret-store-driver.adoc[]
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 helm repo add csi-secrets-store-provider-azure \
-   https://azure.github.io/secrets-store-csi-driver-provider-azure/charts
+  https://azure.github.io/secrets-store-csi-driver-provider-azure/charts
 ----
 
 . Update your local Helm Repositories
@@ -56,10 +56,10 @@ helm repo update
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 helm install -n k8s-secrets-store-csi azure-csi-provider \
-   csi-secrets-store-provider-azure/csi-secrets-store-provider-azure \
-   --set linux.privileged=true --set secrets-store-csi-driver.install=false \
-   --set "linux.providersDir=/var/run/secrets-store-csi-providers" \
-   --version=v1.4.1
+  csi-secrets-store-provider-azure/csi-secrets-store-provider-azure \
+  --set linux.privileged=true --set secrets-store-csi-driver.install=false \
+  --set "linux.providersDir=/var/run/secrets-store-csi-providers" \
+  --version=v1.4.1
 ----
 
 . Set SecurityContextConstraints to allow the CSI driver to run
@@ -67,7 +67,7 @@ helm install -n k8s-secrets-store-csi azure-csi-provider \
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 oc adm policy add-scc-to-user privileged \
-   system:serviceaccount:k8s-secrets-store-csi:csi-secrets-store-provider-azure
+  system:serviceaccount:k8s-secrets-store-csi:csi-secrets-store-provider-azure
 ----
 
 == Create Keyvault and a Secret
@@ -84,8 +84,8 @@ oc new-project my-application
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 az keyvault create -n ${KEYVAULT_NAME} \
-   -g ${KEYVAULT_RESOURCE_GROUP} \
-   --location ${KEYVAULT_LOCATION}
+  -g ${KEYVAULT_RESOURCE_GROUP} \
+  --location ${KEYVAULT_LOCATION}
 ----
 
 . Create a secret in the Keyvault
@@ -93,8 +93,8 @@ az keyvault create -n ${KEYVAULT_NAME} \
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 az keyvault secret set \
-   --vault-name ${KEYVAULT_NAME} \
-   --name secret1 --value "Hello"
+  --vault-name ${KEYVAULT_NAME} \
+  --name secret1 --value "Hello"
 ----
 
 . Create a Service Principal for the keyvault
@@ -115,8 +115,8 @@ export SERVICE_PRINCIPAL_CLIENT_ID="$(az ad sp list \
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 az keyvault set-policy -n ${KEYVAULT_NAME} \
-   --secret-permissions get \
-   --spn ${SERVICE_PRINCIPAL_CLIENT_ID}
+  --secret-permissions get \
+  --spn ${SERVICE_PRINCIPAL_CLIENT_ID}
 ----
 
 . Create and label a secret for Kubernetes to use to access the Key Vault
@@ -124,12 +124,12 @@ az keyvault set-policy -n ${KEYVAULT_NAME} \
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 oc create secret generic secrets-store-creds \
-   -n my-application \
-   --from-literal clientid=${SERVICE_PRINCIPAL_CLIENT_ID} \
-   --from-literal clientsecret=${SERVICE_PRINCIPAL_CLIENT_SECRET}
+  -n my-application \
+  --from-literal clientid=${SERVICE_PRINCIPAL_CLIENT_ID} \
+  --from-literal clientsecret=${SERVICE_PRINCIPAL_CLIENT_SECRET}
 
 oc -n my-application label secret \
-   secrets-store-creds secrets-store.csi.k8s.io/used=true
+  secrets-store-creds secrets-store.csi.k8s.io/used=true
 ----
 
 == Deploy an Application that uses the CSI
@@ -147,17 +147,17 @@ metadata:
 spec:
   provider: azure
   parameters:
-    usePodIdentity: "false"
-    useVMManagedIdentity: "false"
-    userAssignedIdentityID: ""
-    keyvaultName: "${KEYVAULT_NAME}"
-    objects: |
-      array:
-        - |
-          objectName: secret1
-          objectType: secret
-          objectVersion: ""
-    tenantId: "${AZ_TENANT_ID}"
+   usePodIdentity: "false"
+   useVMManagedIdentity: "false"
+   userAssignedIdentityID: ""
+   keyvaultName: "${KEYVAULT_NAME}"
+   objects: |
+     array:
+       - |
+         objectName: secret1
+         objectType: secret
+         objectVersion: ""
+   tenantId: "${AZ_TENANT_ID}"
 EOF
 ----
 
@@ -174,23 +174,23 @@ metadata:
 spec:
   containers:
   - name: busybox
-    image: k8s.gcr.io/e2e-test-images/busybox:1.29
-    command:
-      - "/bin/sleep"
-      - "10000"
-    volumeMounts:
-    - name: secrets-store-inline
-      mountPath: "/mnt/secrets-store"
-      readOnly: true
+   image: k8s.gcr.io/e2e-test-images/busybox:1.29
+   command:
+     - "/bin/sleep"
+     - "10000"
+   volumeMounts:
+   - name: secrets-store-inline
+     mountPath: "/mnt/secrets-store"
+     readOnly: true
   volumes:
-    - name: secrets-store-inline
-      csi:
-        driver: secrets-store.csi.k8s.io
-        readOnly: true
-        volumeAttributes:
-          secretProviderClass: "azure-kvname"
-        nodePublishSecretRef:
-          name: secrets-store-creds
+   - name: secrets-store-inline
+     csi:
+       driver: secrets-store.csi.k8s.io
+       readOnly: true
+       volumeAttributes:
+         secretProviderClass: "azure-kvname"
+       nodePublishSecretRef:
+         name: secrets-store-creds
 EOF
 ----
 
@@ -212,7 +212,7 @@ secret1
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 oc exec busybox-secrets-store-inline \
-   -- cat /mnt/secrets-store/secret1
+  -- cat /mnt/secrets-store/secret1
 ----
 +
 Output should match:
