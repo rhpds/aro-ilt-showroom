@@ -26,10 +26,10 @@ export KEYVAULT_LOCATION=${AZR_RESOURCE_LOCATION:-"eastus"}
 export KEYVAULT_NAME=secret-store-$(cat /dev/urandom | LC_ALL=C tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1)
 export AZ_TENANT_ID=$(az account show -o tsv --query tenantId)
 
-echo "KEYVAULT_RESOURCE_GROUP=$KEYVAULT_RESOURCE_GROUP" >> ~/.bashrc
-echo "KEYVAULT_LOCATION=$KEYVAULT_LOCATION" >> ~/.bashrc
-echo "KEYVAULT_NAME=$KEYVAULT_NAME" >> ~/.bashrc
-echo "AZ_TENANT_ID=$AZ_TENANT_ID" >> ~/.bashrc
+echo "export KEYVAULT_RESOURCE_GROUP=$KEYVAULT_RESOURCE_GROUP" >> ~/.bashrc
+echo "export KEYVAULT_LOCATION=$KEYVAULT_LOCATION" >> ~/.bashrc
+echo "export KEYVAULT_NAME=$KEYVAULT_NAME" >> ~/.bashrc
+echo "export AZ_TENANT_ID=$AZ_TENANT_ID" >> ~/.bashrc
 ----
 
 include::install-kubernetes-secret-store-driver.adoc[]
