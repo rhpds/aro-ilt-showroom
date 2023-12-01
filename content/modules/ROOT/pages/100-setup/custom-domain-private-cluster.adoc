@@ -862,3 +862,11 @@ echo | openssl s_client -connect api.$DOMAIN:6443 | openssl x509 -noout -text | 
 oc logout
 oc login -u kubeadmin -p $AROPASS --server=$AROURL
 ----
+
+== Congratulations!
+
+You now how an ARO cluster that's private from the Internet.
+It's accessed through your jumphost/sshuttle for now.
+It's running a custom default domain name AND a custom certificate.
+
+Let's move on to setting up AAD so you can login to ARO with your own username and password.
