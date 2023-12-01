@@ -251,4 +251,4 @@ az keyvault delete -n ${KEYVAULT_NAME}
 az ad sp delete --id ${SERVICE_PRINCIPAL_CLIENT_ID}
 ----
 
-include::/misc/secrets-store-csi/uninstall-kubernetes-secret-store-driver.md[]
+include::uninstall-kubernetes-secret-store-driver.adoc[]
