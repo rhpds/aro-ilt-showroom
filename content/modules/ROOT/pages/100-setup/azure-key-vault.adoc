@@ -224,6 +224,7 @@ Output should match:
 Hello
 ----
 
+////
 == Cleanup
 
 . Uninstall Helm
@@ -255,3 +256,4 @@ az ad sp delete --id ${SERVICE_PRINCIPAL_CLIENT_ID}
 ----
 
 include::uninstall-kubernetes-secret-store-driver.adoc[]
+////
