@@ -482,7 +482,7 @@ We need to configure the DNS for the Default Ingress Router (*.apps), to be able
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 INGRESS_IP="$(az aro show -n $AZR_CLUSTER -g $AZR_RESOURCE_GROUP --query 'ingressProfiles[0].ip' -o tsv)"
-export $INGRESS_IP
+export INGRESS_IP=$INGRESS_IP
 echo "export INGRESS_IP=$INGRESS_IP" >> ~/.bashrc
 echo $INGRESS_IP
 ----
