@@ -345,6 +345,7 @@ date # start time
 az aro create                                                            \
 --resource-group $AZR_RESOURCE_GROUP                                     \
 --name $AZR_CLUSTER                                                      \
+--domain $DOMAIN                                                         \
 --version $AZR_OCP_VERSION                                               \
 --vnet "$AZR_CLUSTER-aro-vnet-$AZR_RESOURCE_LOCATION"                    \
 --master-subnet "$AZR_CLUSTER-aro-control-subnet-$AZR_RESOURCE_LOCATION" \
@@ -827,6 +828,9 @@ echo | openssl s_client -connect console-openshift-console.apps.$DOMAIN:443 | op
 ----
 
 . Check that the Certificate when you access to the Console is the Cert issued by Let's Encrypt using Certbot:
+.. Get the OpenShift Console URL:
+
+
 +
 image::aro-custom-domain.png[ARO Custom Domain]
 
