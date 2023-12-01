@@ -56,7 +56,7 @@ brew install sshuttle
 ----
 cat << EOF >> ~/.bashrc
 export DOMAIN=aro.private.$GUID.azure.redhatworkshops.io <1>
-export DOMAIN_PARENT=private.$GUID.azure.redhatworkshops.io <1>
+export DOMAIN_PARENT=$GUID.azure.redhatworkshops.io <2>
 export NETWORK_SUBNET=10.0.0.0/20
 export CONTROL_SUBNET=10.0.0.0/24
 export MACHINE_SUBNET=10.0.1.0/24
@@ -70,6 +70,7 @@ EOF
 source ~/.bashrc
 ----
 <1> Note the _private_ custom domain `aro.private.$GUID.azure.redhatworkshops.io`
+<2> The domain parent is two steps up
 
 == ARO Cluster Networking
 
@@ -568,6 +569,14 @@ Keep in mind that these certificates are subject to expiry after 90 days.
 NOTE: this method relies on public DNS for the issuance of certificates since it uses a DNS challenge.
 Once the certificates have been issued, if desired, the public records can be removed (this could be the case if you've created a private ARO cluster and plan to use Azure DNS private record sets).
 
+____
+This process uses two terminal sessions.
+You will switch between them as you work.
+One session runs the Let's Encrypt certificate generation interactive process.
+The other session is where you'll updated DNS records for Let's Encrypt to validate.
+Don't accidentally stop your ARO installation, which should be in a THIRD terminal.
+____
+
 === Generate LE Certs for default Ingress Router (*.apps/console)
 
 . Create TLS Key Pair for the apps/console domain using certbot
@@ -618,7 +627,7 @@ az network dns record-set txt add-record \
   -v $APPS_TXT_RECORD
 ----
 
-. Update the TTL for the records from 1h to 5minutes to testing purposes
+. Update the TTL for the records from 1h to 5 minutes to testing purposes
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
@@ -715,6 +724,11 @@ Successfully received certificate.
 ----
 
 === Configure the Ingress Router with custom certificates
+
+CAUTION: *Now you must wait* for the ARO cluster to finish deploying.
+You've done a lot of work.
+Look back on this document about what you've done and achieve enlightenment.
+
 
 By default, the OpenShift Container Platform uses the Ingress Operator to generate an internal Certificate Authority (CA) and issue a wildcard certificate, which is valid for applications under the .apps sub-domain.
 This certificate is used by both the web console and CLI.
