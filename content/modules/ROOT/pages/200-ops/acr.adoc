@@ -13,6 +13,15 @@ NOTE: If you are interested in deploy and integrate an ACR with a public endpoin
 
 == Prepare your Environment
 
+[NOTE]
+====
+You will need sshuttle running. If oc or podman commands fail to connect, you probably need to restart your sshuttle process.
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+sshuttle --dns --daemon -NHr "aro@${JUMP_IP}"  10.0.0.0/20
+----
+====
+
 . Set some environment variables
 +
 [source,bash,subs="+macros,+attributes",role=execute]
@@ -174,23 +183,6 @@ ACR_USER=$(az acr credential show -n  $ACR_NAME --query "username" -o tsv)
 ACR_PASS=$(az acr credential show -n $ACR_NAME --query "passwords[0].value" -o tsv)
 ----
 
-. Try to login with `podman` or `docker` to the registry outside of the vNET:
-
-[source,bash,subs="+macros,+attributes",role=execute]
-----
-podman login --username $ACR_USER $REGISTRY_FQDN
-----
-
-NOTE: you will receive an error, that it's what we're expecting, because the access to the ACR it's restricted outside of the vNET (peering or VPN/ER needs to be used).
-
-. Get (and save) the ARO_URL and the KUBEADMIN password:
-
-[source,bash,subs="+macros,+attributes",role=execute]
-----
-ARO_KUBEPASS=$(az aro list-credentials --name $AZR_CLUSTER --resource-group $AZR_RESOURCE_GROUP -o tsv --query kubeadminPassword)
-ARO_URL=$(az aro show -g $AZR_RESOURCE_GROUP -n $AZR_CLUSTER --query apiserverProfile.url -o tsv)
-----
-
 == Automation with Terraform (Optional)
 
 If you want to deploy everything on this blog post automated, clone the rh-mobb terraform-aro repo and deploy it:
@@ -212,37 +204,13 @@ terraform apply aro.plan
 
 == Testing the Azure Container Registry from the Private ARO cluster
 
-Once we have deployed the ACR, we need to test the ACR instance deployed, and limited the access only from within the vNET (or using peering, VPN or ExpressRoute connectivity).
+Once we have deployed the ACR, push an image to it. Note that sshuttle is the only reason you can connect to this ACR.
 
-. SSH to the JUMPHOST to be able to test and push a example image:
-
-[source,bash,subs="+macros,+attributes",role=execute]
-----
-export JUMPHOST="xxx"
-ssh -l aro $JUMPHOST
-----
-
-. Inside of the JUMPHOST (within the vNET) install oc and docker/podman:
+. Log in to the registry
 
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-sudo dnf update -y --disablerepo=* --enablerepo='*microsoft*' rhui-azure-rhel8-eus
-sudo dnf install telnet wget bash-completion podman -y
-wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz
-tar -xvf openshift-client-linux.tar.gz
-sudo mv oc kubectl /usr/bin/
-oc completion bash > oc_bash_completion
-sudo cp oc_bash_completion /etc/bash_completion.d/
-----
-
-. Login to the registry (this time should work):
-
-[source,bash,subs="+macros,+attributes",role=execute]
-----
-export REGISTRY_FQDN="xxx"
-export ACR_USER="xxx"
-export ARO_URL="xxx"
-podman login --username $ACR_USER $REGISTRY_FQDN
+podman login --username $ACR_USER $REGISTRY_FQDN --password $ACR_PASS
 ----
 
 . Push an example image to the ACR:
