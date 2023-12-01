@@ -217,48 +217,6 @@ az network route-table route create -g $AZR_RESOURCE_GROUP --name aro-vnet   \
   --next-hop-type VirtualNetworkGateway
 ----
 
-. Create firewall rules for ARO resources
-+
-NOTE: ARO clusters do not need access to the internet, however your own workloads running on them may.
-This course requires it, so please set it up.
-
-** Create a Network Rule to allow all http/https egress traffic (not recommended in practice)
-+
-[source,bash,subs="+macros,+attributes",role=execute]
-----
-az network firewall network-rule create -g $AZR_RESOURCE_GROUP -f aro-private \
-  --collection-name 'allow-https' --name allow-all                          \
-  --action allow --priority 100                                             \
-  --source-addresses '*' --dest-addr '*'                                    \
-  --protocols 'Any' --destination-ports 1-65535
-----
-
-** Create Application Rules to allow to a restricted set of destinations
-+
-NOTE: This is reference for you.
-After auditing your customer's requirements, replace the target-fqdns with your desired destinations.
-+
-[source,bash,subs="+macros,+attributes",role=execute]
-----
-az network firewall application-rule create -g $AZR_RESOURCE_GROUP -f aro-private     \
-    --collection-name 'Allow_Egress'                                                  \
-    --action allow                                                                    \
-    --priority 100                                                                    \
-    -n 'required'                                                                     \
-    --source-addresses '*'                                                            \
-    --protocols 'http=80' 'https=443'                                                 \
-    --target-fqdns '*.google.com' '*.bing.com'
-
-az network firewall application-rule create -g $AZR_RESOURCE_GROUP -f aro-private     \
-    --collection-name 'Docker'                                                        \
-    --action allow                                                                    \
-    --priority 200                                                                    \
-    -n 'docker'                                                                       \
-    --source-addresses '*'                                                            \
-    --protocols 'http=80' 'https=443'                                                 \
-    --target-fqdns '*cloudflare.docker.com' '*registry-1.docker.io' 'apt.dockerproject.org' 'auth.docker.io'
-----
-
 . Update the subnets to use the Firewall
 +
 Once the cluster is deployed successfully you can update the subnets to use the firewall instead of the default outbound loadbalancer rule.
@@ -416,7 +374,7 @@ echo "export JUMP_IP=$JUMP_IP" >> $HOME/.bashrc
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-sshuttle --dns -NHr "aro@${JUMP_IP}"  10.0.0.0/8 --daemon
+sshuttle --dns -NHr "aro@${JUMP_IP}" $NETWORK_SUBNET --daemon
 ----
 +
 ****
@@ -439,7 +397,7 @@ NOTE: Make sure you can `ssh aro@$JUMP_IP` with no password.
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-sshuttle --dns -NHr "aro@${JUMP_IP}"  10.0.0.0/20 --daemon
+sshuttle --dns -NHr "aro@${JUMP_IP}" 10.0.0.0/20 --daemon
 ----
 ****
 +
@@ -784,7 +742,7 @@ oc login -u kubeadmin -p $AROPASS --server=$AROURL --insecure-skip-tls-verify=tr
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 oc create configmap custom-ca \
-  --from-file=$SCRATCH_DIR/config/live/apps.$DOMAIN/fullchain.pem \
+  --from-file=ca-bundle.crt=$SCRATCH_DIR/config/live/apps.$DOMAIN/fullchain.pem \
   -n openshift-config
 ----
 
@@ -835,8 +793,11 @@ echo | openssl s_client -connect console-openshift-console.apps.$DOMAIN:443 | op
 
 . Check that the Certificate when you access to the Console is the Cert issued by Let's Encrypt using Certbot:
 .. Get the OpenShift Console URL:
-
-
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+oc whoami --show-console
+----
 +
 image::aro-custom-domain.png[ARO Custom Domain]
 
@@ -889,10 +850,55 @@ oc logout
 oc login -u kubeadmin -p $AROPASS --server=$AROURL
 ----
 
-== Congratulations!
+== What we've accomplished so far
 
-You now how an ARO cluster that's private from the Internet.
-It's accessed through your jumphost/sshuttle for now.
-It's running a custom default domain name AND a custom certificate.
+You now have an ARO cluster that is disconnected from the Internet for both ingress and egress.
+It's accessed by tunneling through your jumphost with sshuttle for now.
+It's running a custom default domain name with a custom certificate.
+
+. Confirm that your cluster cannot egress to the Internet. This command should fail.
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+oc debug -- curl -v https://redhat.com
+----
+
+== Opening up Internet egress
+
+. Create firewall rules for ARO resources
++
+NOTE: ARO clusters do not need access to the internet, however your own workloads running on them may.
+This course requires it, so please set it up.
+
+** For simplicity, create a Network Rule to allow all egress traffic and an Application Rule that allows all HTTP and HTTPS traffice. In practice, we would set up rules to allow only specific destinations as needed by our applications.
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+az network firewall network-rule create -g $AZR_RESOURCE_GROUP -f aro-private \
+  --collection-name 'allow-https' --name allow-all                          \
+  --action allow --priority 100                                             \
+  --source-addresses '*' --dest-addr '*'                                    \
+  --protocols 'Any' --destination-ports 1-65535
+
+az network firewall application-rule create -g $AZR_RESOURCE_GROUP -f aro-private     \
+    --collection-name 'Allow_Egress'                                                  \
+    --action allow                                                                    \
+    --priority 100                                                                    \
+    -n 'required'                                                                     \
+    --source-addresses '*'                                                            \
+    --protocols 'http=80' 'https=443'                                                 \
+    --target-fqdns '*'
+----
++
+. Now confirm that your cluster can egress to the Internet.
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+oc debug -- curl -v https://redhat.com
+----
+
+== Congratulations
+
+Your cluster is ready.
 
 Let's move on to setting up AAD so you can login to ARO with your own username and password.
