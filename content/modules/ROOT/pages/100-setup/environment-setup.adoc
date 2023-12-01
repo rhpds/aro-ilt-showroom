@@ -235,7 +235,7 @@ az account show --subscription $AZ_SUB_ID --query name -o tsv
 .. Set *Subscription* to the name of the subscription you are creating the cluster in
 .. Set *Region* to "East US" and uncheck the other region boxes
 . Search for the quota name that you want to increase.
-This may be "Total Regional vCPUs" if you checked that prior to creating the cluster, or it may be a specific resource quota named in a `ResourceQuotaExceeded` error message.
+This may be "Standard DSv3 Family vCPUs" if you checked that prior to creating the cluster, or it may be a specific resource quota named in a `ResourceQuotaExceeded` error message.
 Note that in the latter case, the Azure console uses a localized display name (for example `Standard DSv3 Family vCPUs` rather than an identifier name `standardDSv3Family` mentioned in the error message.
 . Next to the quota name you wish to increase, click the pencil in the Adjustable column to request adjustment
 . Enter the new desired quota in the *New limit* text box.
