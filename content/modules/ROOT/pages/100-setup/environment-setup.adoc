@@ -167,6 +167,7 @@ export AZR_RESOURCE_GROUP=aro-custom-private-rg-{guid}
 export AZ_SUB_ID={azure_subscription}
 export AZR_RESOURCE_LOCATION=eastus
 export AZR_PULL_SECRET=~/Downloads/pull-secret.txt
+export GUID={guid}
 EOF
 source ~/.bashrc
 ----
