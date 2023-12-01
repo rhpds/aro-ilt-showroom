@@ -444,7 +444,9 @@ az vm create --name jumphost                 \
 ----
 JUMP_IP=$(az vm list-ip-addresses -g $AZR_RESOURCE_GROUP -n jumphost -o tsv \
 --query '[].virtualMachine.network.publicIpAddresses[0].ipAddress')
+export $JUMP_IP
 echo $JUMP_IP
+echo "export JUMP_IP=$JUMP_IP" >> $HOME/.bashrc
 ----
 
 . Use sshuttle to create a ssh vpn via the jump host (use a separate terminal session)
