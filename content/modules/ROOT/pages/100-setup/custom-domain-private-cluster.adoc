@@ -60,6 +60,7 @@ export DOMAIN_PARENT=private.$GUID.azure.redhatworkshops.io <1>
 export NETWORK_SUBNET=10.0.0.0/20
 export CONTROL_SUBNET=10.0.0.0/24
 export MACHINE_SUBNET=10.0.1.0/24
+export FIREWALL_SUBNET=10.0.2.0/24
 export JUMPHOST_SUBNET=10.0.3.0/24
 export NAMESPACE=aro-custom-domain
 export AZR_CLUSTER=aro-custom-private-cluster-$GUID
@@ -171,7 +172,9 @@ az network firewall create -g $AZR_RESOURCE_GROUP             \
   -n aro-private -l $AZR_RESOURCE_LOCATION
 ----
 
-. Configure the firewall and configure IP Config (this may take 15 minutes)
+. Configure the firewall and configure IP Config
++
+WARNING: This may take as much as 15 minutes to process
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
@@ -210,10 +213,10 @@ az network route-table route create -g $AZR_RESOURCE_GROUP --name aro-vnet   \
 
 . Create firewall rules for ARO resources
 +
-NOTE: Note: ARO clusters do not need access to the internet, however your own workloads running on them may.
-You can skip this step if you don't need any egress at all.
+NOTE: ARO clusters do not need access to the internet, however your own workloads running on them may.
+This course requires it, so please set it up.
 
-** Create a Network Rule to allow all http/https egress traffic (not recommended)
+** Create a Network Rule to allow all http/https egress traffic (not recommended in practice)
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
@@ -226,7 +229,8 @@ az network firewall network-rule create -g $AZR_RESOURCE_GROUP -f aro-private \
 
 ** Create Application Rules to allow to a restricted set of destinations
 +
-NOTE: replace the target-fqdns with your desired destinations
+NOTE: This is reference for you.
+After auditing your customer's requirements, replace the target-fqdns with your desired destinations.
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
@@ -266,20 +270,25 @@ az network vnet subnet update -g $AZR_RESOURCE_GROUP            \
 --route-table aro-udr
 ----
 
-=== Create Private ARO Clusters with Custom Domain
+== Create Private ARO Clusters with Custom Domain
 
 . Create Private ARO Cluster with Custom Domain
 +
 ____
-When the --domain flag with an FQDN (e.g. my.domain.com) is used to create your cluster you will need to configure DNS and a certificate authority for your API server and apps ingress. This will be done once we establish connectivity to the cluster.
+When the --domain flag with an FQDN (e.g. my.domain.com) is used to create your cluster you will need to configure DNS and a certificate authority for your API server and apps ingress.
+This will be done once we establish connectivity to the cluster.
 ____
++
+. Start a tmux session to preserve your work if connection is lost.
+Rejoin your tmux session after connection loss with `tmux a`.
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 tmux
 ----
 +
-. Deploy the ARO cluster
+////
+. Deploy the ARO cluster (no SP creation)
 +
 WARNING: The next step takes over 45 minutes to complete.
 It's best to start `tmux` in case you are disconnected.
@@ -298,10 +307,13 @@ az aro create \
   --ingress-visibility Private \
   --pull-secret @$AZR_PULL_SECRET \
   --domain $DOMAIN
-
-# PRIVATE one - why client-ids?
+----
+////
 
 . Create an Azure Service Principal
++
+This is optional, but useful to separate concerns.
+You can just as well use the existing service principal.
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
@@ -324,9 +336,8 @@ az aro create                                                            \
 --ingress-visibility Private                                             \
 --pull-secret @$AZR_PULL_SECRET                                          \
 --client-id "${AZ_SP_ID}"                                                \
---client-secret "${AZ_SP_PASS}"
-----
-
+--client-secret "${AZ_SP_PASS}"                                          \
+--outbound-type UserDefinedRouting
 ----
 <1> UserDefinedRouting is essential to Private Clusters
 
@@ -379,10 +390,17 @@ echo "JUMP_IP=$JUMP_IP" >> ~/.bashrc
 
 . Use `sshuttle` on your Laptop to Create a SSH VPN via the Jump Host as a Daemon
 +
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+sshuttle --dns -NHr "aro@${JUMP_IP}"  10.0.0.0/8 --daemon
+----
++
 ****
-If you are using the bastion to interact with Azure instead of your laptop, setup the following on your laptop
+*If you are using the bastion*
 
-. Copy the private key that was generated above to your laptop `~/.ssh/jumphost.pem`
+You'll want to run `sshuttle` on the bastion AND your laptop.
+
+. Copy the private key that was generated on the bastion above to your laptop `~/.ssh/jumphost.pem`
 . Add it to `~/.ssh/config`
 +
 [source,bash,subs="+macros,+attributes",role=execute]
@@ -390,28 +408,37 @@ If you are using the bastion to interact with Azure instead of your laptop, setu
 Host <ip address of jumphost>
   IdentityFile ~/.ssh/jumphost.pem
 ----
-****
 +
-. Run sshuttle
+. Run sshuttle on the bastion
 +
 NOTE: Make sure you can `ssh aro@$JUMP_IP` with no password.
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-sshuttle --dns -NHr "aro@${JUMP_IP}"  10.0.0.0/8 --daemon
+sshuttle --dns -NHr "aro@${JUMP_IP}"  10.0.0.0/20 --daemon
 ----
-
+****
++
+. Run sshuttle on your laptop
++
+NOTE: Make sure you can `ssh aro@$JUMP_IP` with no password.
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+sshuttle --dns -NHr "aro@${JUMP_IP}"  10.0.0.0/20 --daemon
+----
++
 . Return to the first terminal with the ARO installation to see if installation has finished by pressing kbd:[CTRL+b] then kbd:[n]
-
++
 . It has not finished.
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 \ Running ..
 ----
-
++
 . Hit kbd:[CTRL+b] then kbd:[n] again to return to your second terminal.
-
++
 . HOWEVER! If values you need are already available, `az aro` will report them.
 ONWARDS!
 
@@ -436,10 +463,9 @@ We need to configure the DNS for the Default Ingress Router (*.apps), to be able
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 INGRESS_IP="$(az aro show -n $AZR_CLUSTER -g $AZR_RESOURCE_GROUP --query 'ingressProfiles[0].ip' -o tsv)"
-
+export $INGRESS_IP
+echo "export INGRESS_IP=$INGRESS_IP" >> ~/.bashrc
 echo $INGRESS_IP
-
-echo "INGRESS_IP=$INGRESS_IP" >> ~/.bashrc
 ----
 
 ==== Apps/Console Public Zone Ingress Configuration
