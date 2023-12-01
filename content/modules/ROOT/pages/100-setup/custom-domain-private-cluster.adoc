@@ -311,6 +311,20 @@ az aro create \
 ----
 ////
 
+. Find an older, supported version of OpenShift to install
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+az aro get-versions
+export AZR_OCP_VERSION=$(az aro get-versions -ojson --query '[0]')
+echo "export AZR_OCP_VERSION=$AZR_OCP_VERSION" >> ~/.bashrc
+echo $AZR_OCP_VERSION
+----
++
+NOTE: `az aro create` will default to installing the latest version.
+*Copy one of the older version semvers.*
+We will run an upgrade later.
+
 . Create an Azure Service Principal
 +
 This is optional, but useful to separate concerns.
@@ -327,9 +341,11 @@ AZ_SP_ID=$(az ad sp list --display-name "${AZR_CLUSTER}-SP" --query "[0].appId" 
 
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
+date # start time
 az aro create                                                            \
 --resource-group $AZR_RESOURCE_GROUP                                     \
 --name $AZR_CLUSTER                                                      \
+--version $AZR_OCP_VERSION                                               \
 --vnet "$AZR_CLUSTER-aro-vnet-$AZR_RESOURCE_LOCATION"                    \
 --master-subnet "$AZR_CLUSTER-aro-control-subnet-$AZR_RESOURCE_LOCATION" \
 --worker-subnet "$AZR_CLUSTER-aro-machine-subnet-$AZR_RESOURCE_LOCATION" \
@@ -338,7 +354,7 @@ az aro create                                                            \
 --pull-secret @$AZR_PULL_SECRET                                          \
 --client-id "${AZ_SP_ID}"                                                \
 --client-secret "${AZ_SP_PASS}"                                          \
---outbound-type UserDefinedRouting
+--outbound-type UserDefinedRouting <1>
 ----
 <1> UserDefinedRouting is essential to Private Clusters
 
