@@ -416,7 +416,7 @@ echo "export JUMP_IP=$JUMP_IP" >> $HOME/.bashrc
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-sshuttle --dns -NHr "aro@${JUMP_IP}"  10.0.0.0/8 --daemon
+sshuttle --dns -NHr "aro@${JUMP_IP}" $NETWORK_SUBNET --daemon
 ----
 +
 ****
@@ -439,7 +439,7 @@ NOTE: Make sure you can `ssh aro@$JUMP_IP` with no password.
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-sshuttle --dns -NHr "aro@${JUMP_IP}"  10.0.0.0/20 --daemon
+sshuttle --dns -NHr "aro@${JUMP_IP}" 10.0.0.0/20 --daemon
 ----
 ****
 +
