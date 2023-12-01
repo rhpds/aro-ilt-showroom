@@ -108,6 +108,9 @@ export SERVICE_PRINCIPAL_CLIENT_SECRET="$(az ad sp create-for-rbac \
 
 export SERVICE_PRINCIPAL_CLIENT_ID="$(az ad sp list \
   --display-name http://$KEYVAULT_NAME --query '[0].appId' -otsv)"
+
+echo "SERVICE_PRINCIPAL_CLIENT_SECRET=$SERVICE_PRINCIPAL_CLIENT_SECRET" >> ~/.bashrc
+echo "SERVICE_PRINCIPAL_CLIENT_ID=$SERVICE_PRINCIPAL_CLIENT_ID" >> ~/.bashrc
 ----
 
 . Set an Access Policy for the Service Principal
