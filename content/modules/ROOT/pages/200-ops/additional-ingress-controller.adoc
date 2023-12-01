@@ -47,7 +47,7 @@ oc create secret tls custom-tls \
 
 . Create an ingress controller
 +
-[,yaml]
+[source,yaml,subs="+macros,+attributes",role=execute]
 ----
 cat <<EOF | oc apply -f -
 apiVersion: operator.openshift.io/v1
