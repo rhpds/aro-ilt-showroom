@@ -101,12 +101,12 @@ oc login \
   -p $(az aro list-credentials -g $AZR_RESOURCE_GROUP -n $AZR_CLUSTER --query kubeadminPassword -o tsv)
 ----
 +
-. Next, create a secret that contains the client secret that you captured in step 2 above.
+. Next, create a secret that contains the client secret value that you captured in step 2 above.
 To do so, run the following command, making sure to replace the variable specified:
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-CLIENT_SECRET=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx # Replace this with the Client Secret
+CLIENT_SECRET=xxxxxxx # Replace this with the Client Secret Value
 ----
 +
 [source,bash,subs="+macros,+attributes",role=execute]
