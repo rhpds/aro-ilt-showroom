@@ -11,21 +11,25 @@ Network traffic between the Private ARO cluster and the registry's private endpo
 
 NOTE: If you are interested in deploy and integrate an ACR with a public endpoint and connect them into an ARO cluster follow the https://learn.microsoft.com/en-us/azure/openshift/howto-use-acr-with-aro[How-to Use ACR with ARO guide].
 
-== Prepare your ARO cluster
+== Prepare your Environment
 
-. link:/experts/private-cluster[Deploy a Private ARO cluster]
 . Set some environment variables
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
+# Already set in your .bashrc:
+# AZR_CLUSTER
+# AZR_RESOURCE_LOCATION
+# AZR_RESOURCE_GROUP
+# GUID
+# AROURL
+# AROPASS
+
 export NAMESPACE=aro-acr
-export AZR_CLUSTER=aro-mobb
-export AZR_RESOURCE_LOCATION=eastus
-export AZR_RESOURCE_GROUP=aro-mobb-rg
-export ACR_NAME=acr$((RANDOM))
+export ACR_NAME=acr$GUID
 export PRIVATEENDPOINTSUBNET_PREFIX="10.0.8.0/23"
 export PRIVATEENDPOINTSUBNET_NAME="PrivateEndpoint-subnet"
-export ARO_VNET_NAME="aro-mobb-vnet"
+export ARO_VNET_NAME="$AZR_CLUSTER-aro-vnet-$AZR_RESOURCE_LOCATION"
 ----
 
 == Create ACR and restrict the access using Private Endpoint
@@ -196,9 +200,9 @@ If you want to deploy everything on this blog post automated, clone the rh-mobb 
 git clone https://github.com/rh-mobb/terraform-aro.git
 cd terraform-aro
 terraform init
-terraform plan -out aro.plan 		                       \
-  -var "cluster_name=aro-$(shell whoami)"              \
-  -var "restrict_egress_traffic=true"		               \
+terraform plan -out aro.plan                           \
+  -var "cluster_name=$AZR_CLUSTER                      \
+  -var "restrict_egress_traffic=true"                  \
   -var "api_server_profile=Private"                    \
   -var "ingress_profile=Private"                       \
   -var "acr_private=true"
@@ -254,7 +258,7 @@ podman push $REGISTRY_FQDN/centos7/httpd-24-centos7
 
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-oc login --username kubeadmin --server=$ARO_URL
+oc login --username kubeadmin --server=$AROURL -p $AROPASS
 oc new-project test-acr
 ----
 
@@ -265,7 +269,7 @@ oc new-project test-acr
 oc create -n test-acr secret docker-registry \
   --docker-server=$REGISTRY_FQDN \
   --docker-username=$ACR_USER \
-  --docker-password=******** \
+  --docker-password=$ACR_PASS \
   --docker-email=unused \
   acr-secret
 ----
