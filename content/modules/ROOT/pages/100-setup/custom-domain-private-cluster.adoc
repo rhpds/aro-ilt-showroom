@@ -156,7 +156,7 @@ az extension add -n azure-firewall
 az extension update -n azure-firewall
 ----
 
-. Create a firewall network, IP, and firewall
+. Create a firewall network
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
@@ -165,7 +165,12 @@ az network vnet subnet create                                 \
   --vnet-name "$AZR_CLUSTER-aro-vnet-$AZR_RESOURCE_LOCATION"  \
   -n "AzureFirewallSubnet"                                    \
   --address-prefixes $FIREWALL_SUBNET
+----
 
+. Create IP, and firewall
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
 az network public-ip create -g $AZR_RESOURCE_GROUP -n fw-ip   \
   --sku "Standard" --location $AZR_RESOURCE_LOCATION
 
