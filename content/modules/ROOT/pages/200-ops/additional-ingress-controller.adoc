@@ -10,14 +10,34 @@
 
 == Get Started
 
-. Create some environment variables
+. Create some environment variables. You will need to set the email address.
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-DOMAIN=custom.azure.mobb.ninja
-EMAIL=example@email.com
+# Already set in your .bashrc
+# DOMAIN_PARENT
+# EMAIL
+# AZR_DNS_RESOURCE_GROUP
+
+INGRESS_DOMAIN=custom.$DOMAIN_PARENT
 SCRATCH_DIR=/tmp/aro
 ----
++
+. Start a tmux session if you're not already in one. 
+Rejoin your tmux session after connection loss with `tmux a`.
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+tmux
+----
+
+== Create Certificates
+____
+This process uses two terminal sessions.
+You will switch between them as you work.
+One session runs the Let's Encrypt certificate generation interactive process.
+The other session is where you'll updated DNS records for Let's Encrypt to validate.
+____
 
 . Create a certificate for the ingress controller
 +
@@ -29,11 +49,63 @@ certbot certonly --manual \
   --server https://acme-v02.api.letsencrypt.org/directory \
   --agree-tos \
   --manual-public-ip-logging-ok \
-  -d "*.$DOMAIN" \
+  -d "*.$INGRESS_DOMAIN" \
   --config-dir "$SCRATCH_DIR/config" \
   --work-dir "$SCRATCH_DIR/work" \
   --logs-dir "$SCRATCH_DIR/logs"
 ----
+NOTE: Take note of the Domain and TXT value fields as these are required for Let's Encrypt to validate that you own the domain and can therefore issue you the certificates.
++
+WARNING: Don't close or interrupt this process, we will finish after the dns challenge with the certbot.
++
+. Use your mouse to copy the text record VALUE
++
+.Example
+----
+InY85UGzpDLOiS_xpLp-EXAMPLEzfM47BTAJCx2lN6sA
+----
+. Open a additional terminal with tmux by pressing kbd:[CTRL+b] then kbd:[c]
+. Paste the DNS_Challenge in the following environment variable
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+export INGRESS_TXT_RECORD="xxxx"
+----
+
+. Add the necessary records to validate ownership of the apps domain
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+az network dns record-set txt add-record \
+  -g $AZR_DNS_RESOURCE_GROUP \
+  -z $DOMAIN_PARENT \
+  -n "_acme-challenge.custom" \
+  -v $INGRESS_TXT_RECORD
+----
+
+. Update the TTL for the records from 1h to 5 minutes to testing purposes
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+az network dns record-set txt update \
+  -g $AZR_DNS_RESOURCE_GROUP \
+  -z $DOMAIN_PARENT \
+  -n "_acme-challenge.custom" \
+  --set ttl=300
+----
+
+. Make sure that you get the TXT record from the Azure domain challenge is registered and propagated properly
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+dig +short TXT _acme-challenge.custom.$DOMAIN_PARENT
+----
+
+. Return to the first terminal with tmux by pressing kbd:[CTRL+b] then kbd:[n]
+
+. Finish the generation of the ingress certificate PKIs for the ARO cluster by pressing kbd:[Enter]
+
+== Create the ingress controller with the new certificate
 
 . Create a secret for the certificate
 +
@@ -41,8 +113,8 @@ certbot certonly --manual \
 ----
 oc create secret tls custom-tls \
   -n openshift-ingress \
-  --cert=$SCRATCH_DIR/config/live/$DOMAIN/fullchain.pem \
-  --key=$SCRATCH_DIR/config/live/$DOMAIN/privkey.pem
+  --cert=$SCRATCH_DIR/config/live/$INGRESS_DOMAIN/fullchain.pem \
+  --key=$SCRATCH_DIR/config/live/$INGRESS_DOMAIN/privkey.pem
 ----
 
 . Create an ingress controller
@@ -56,7 +128,7 @@ metadata:
   name: custom
   namespace: openshift-ingress-operator
 spec:
-  domain: $DOMAIN
+  domain: $INGRESS_DOMAIN
   nodePlacement:
     nodeSelector:
       matchLabels:
@@ -106,13 +178,25 @@ router-custom   LoadBalancer   172.30.55.36     10.0.2.4     80:30475/TCP,443:30
 . Optionally verify in the Azure portal or using CLI that the Load Balancer Service has gotten the new Frontend IP and two Load Balancing Rules - one for port 80 and another one for port 443.
 In case of an Internally scoped Ingress Controller the changes are to be observed within the Load Balancer that has the `-internal` suffix.
 . Create a wildcard DNS record pointing at the `EXTERNAL-IP`
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+$INGRESS_EXTERNAL_IP=xx.xx.xx.xx
+
+az network dns record-set a add-record \
+  -g $AZR_DNS_RESOURCE_GROUP \
+  -z $DOMAIN_PARENT \
+  -n '*.custom' \
+  -a $INGRESS_EXTERNAL_IP
+----
+
 . Test that the Ingress is working
 +
 NOTE: For the Internal ingress controller, make sure that the test host has the necessary reachability to the VPC/subnet as well as the DNS resolver.
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-curl -s https://test.$DOMAIN | head
+curl -s https://test.$INGRESS_DOMAIN | head
 ----
 +
 ----
@@ -150,7 +234,7 @@ metadata:
     type: custom
   name: hello-openshift-tls
 spec:
-  host: hello.$DOMAIN
+  host: hello.$INGRESS_DOMAIN
   port:
     targetPort: 8080-tcp
   tls:
