@@ -1,1 +1,35 @@
-Welcome to class!
+= Welcome to class!
+
+== Big Pictures
+
+This workshop is split into two major parts:
+
+* Day 1 Setup ARO
+* Day 2 Ops
+
+== Agenda
+
+. Monday:
+* Install ARO
+. Tuesday:
+* Morning - ARO Ops Labs
+* 2pm - BU Overview and Qustions
+. Wednesday:
+* Morning
+** ARO Wrap-up
+** 10am Tracy Raniin - VP Eng
+* Afternoon
+** 1pm - SRE Presentation
+** 2pm - CSA Presentation
+* Evening
+** 6pm - Dinner
+. Thursday:
+* Morning
+** ROSA labs
+* Afternoon
+** 1pm - ROSA BU Presentation
+. Friday
+** ROSA Wrap-up
+
+
+Let's get started with deploying ARO! xref:100-setup/environment-setup.adoc[Environment Setup]
