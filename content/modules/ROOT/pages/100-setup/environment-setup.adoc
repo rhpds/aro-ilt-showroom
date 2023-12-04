@@ -35,37 +35,36 @@ Go ahead and use your favorite terminal on your laptop to access the bastion hos
 
 . You'll need to install `az` tools, if you don't have them.  See below.
 
-== Tools Setup
+== Tools Setup - Overview
+
+The Azure command line utility `az`::
+ https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-macos[Azure Docs]
+
+The OpenShift CLI, `oc`, with a bonus `kubectl`
+
+Helm::
+ https://helm.sh
+
+Shuttle, a great tool for using jumphosts easily::
+ https://github.com/sshuttle/sshuttle
+
+Certbot::
+ https://certbot.eff.org
 
 === MacOS
 
-NOTE: See https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-macos[Azure Docs] for alternative install options.
-
-. Install OpenShift CLI using homebrew
+. Install all the tools in one shot using homebrew.
+Should work! :D
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-brew update && brew install openshift-cli
-----
-+
-. Install Azure CLI using homebrew
-+
-[source,bash,subs="+macros,+attributes",role=execute]
-----
-brew update && brew install azure-cli
-----
-+
-. Install sshuttle and helm using homebrew
-+
-[source,bash,subs="+macros,+attributes",role=execute]
-----
-brew install sshuttle helm
+brew update && brew install openshift-cli azure-cli helm sshuttle certbot
 ----
 
-=== On Your Linux Laptop
+=== On RHEL 9
 
-WARNING: The bastion already has this tools installed.
-Skip this if youa re using the bastion.
+WARNING: The bastion already has the `az` tools installed.
+Skip this if you are using the bastion.
 
 NOTE: See https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-linux?pivots=dnf[Azure Docs] for alternative install options.
 
