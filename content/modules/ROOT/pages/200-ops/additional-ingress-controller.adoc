@@ -250,7 +250,7 @@ EOF
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-curl https://hello.custom.azure.mobb.ninja
+curl https://hello.$INGRESS_DOMAIN
 ----
 +
 [source,bash,subs="+macros,+attributes",role=execute]
