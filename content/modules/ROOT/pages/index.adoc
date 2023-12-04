@@ -7,6 +7,8 @@ This workshop is split into two major parts:
 * Day 1 Setup ARO
 * Day 2 Ops
 
+Let's get started with deploying ARO! xref:100-setup/environment-setup.adoc[Environment Setup]
+
 == Agenda
 
 . Monday:
@@ -30,6 +32,3 @@ This workshop is split into two major parts:
 ** 1pm - ROSA BU Presentation
 . Friday
 ** ROSA Wrap-up
-
-
-Let's get started with deploying ARO! xref:100-setup/environment-setup.adoc[Environment Setup]
