@@ -37,30 +37,21 @@ Make sure to use the same terminal session while going through guide for all com
 . Manually set environment variables
 +
 ----
-AROCLUSTER=<cluster name>
-
-ARORG=<resource group for the cluster>
-
-AFD_NAME=<name you want to use for the front door instance>
-
-DOMAIN='e.g. aro.kmobb.com'  This is the domain that you will be adding to Azure DNS to manage.
-
-ARO_APP_FQDN='e.g. minesweeper.aro.kmobb.com'
-(note - we will be deploying an application called minesweeper to test front door.  Select a domain you would like to use for the application.  For example minesweeper.aro.kmobb.com ... where aro.kmobb.com is the domain you manage and have DNS access to.)
-
-AFD_MINE_CUSTOM_DOMAIN_NAME='minesweeper-aro-kmobb-com'
-(note - this should be your domain name without and .'s for example minesweeper-aro-kmobb-com)
-
-PRIVATEENDPOINTSUBNET_PREFIX= subnet in the VNET you cluster is in.  If you following the example above to create a custer where you virtual network is 10.0.0.0/20 then you can use '10.0.6.0/24'
-
-PRIVATEENDPOINTSUBNET_NAME='PrivateEndpoint-subnet'
+AROCLUSTER=$AZR_CLUSTER
+ARORG=$AZR_RESOURCE_GROUP
+AFD_NAME=frontdoor-$GUID
+FRONTDOOR_DOMAIN=public.$DOMAIN_PARENT # This is the domain that you will be adding to Azure DNS to manage.
+ARO_APP_FQDN=minesweeper.$FRONTDOOR_DOMAIN # (note - we will be deploying an application called minesweeper to test front door.  Select a domain you would like to use for the application.  For example minesweeper.aro.kmobb.com ... where aro.kmobb.com is the domain you manage and have DNS access to.)
+AFD_MINE_CUSTOM_DOMAIN_NAME=$(echo $ARO_APP_FQDN | sed s/\\./-/g) # this should be your domain name with dots replaces with dashes, for example minesweeper-aro-kmobb-com)
+PRIVATEENDPOINTSUBNET_PREFIX=10.0.6.0/24 # subnet in the VNET your cluster is in.  If you following the example above to create a custer where you virtual network is 10.0.0.0/20 then you can use '10.0.6.0/24'
+PRIVATEENDPOINTSUBNET_NAME=PrivateEndpoint-subnet-$GUID
 ----
 
 . Set environment variables with Bash
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-UNIQUEID=$RANDOM
+UNIQUEID=$GUID
 
 ARO_RGNAME=$(az aro show -n $AROCLUSTER -g $ARORG --query "clusterProfile.resourceGroupId" -o tsv | sed 's/.*\///')
 
@@ -245,7 +236,7 @@ afdToken=$(az afd custom-domain show \
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-az network dns zone create -g $ARORG -n $DOMAIN
+az network dns zone create -g $ARORG -n $FRONTDOOR_DOMAIN
 ----
 +
 ____
@@ -257,7 +248,7 @@ Create a new text record in your DNS server
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-az network dns record-set txt add-record -g $ARORG -z $DOMAIN -n _dnsauth.$(echo $ARO_APP_FQDN | sed 's/\..*//') --value $afdToken --record-set-name _dnsauth.$(echo $ARO_APP_FQDN | sed 's/\..*//')
+az network dns record-set txt add-record -g $ARORG -z $FRONTDOOR_DOMAIN -n _dnsauth.$(echo $ARO_APP_FQDN | sed 's/\..*//') --value $afdToken --record-set-name _dnsauth.$(echo $ARO_APP_FQDN | sed 's/\..*//')
 ----
 
 . Check if the domain has been validated:
@@ -284,8 +275,8 @@ Create a cname record for the application
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-az network dns record-set cname set-record -g $ARORG -z $DOMAIN \
--n $(echo $ARO_APP_FQDN | sed 's/\..*//') -z $DOMAIN -c $afdEndpoint
+az network dns record-set cname set-record -g $ARORG -z $FRONTDOOR_DOMAIN \
+-n $(echo $ARO_APP_FQDN | sed 's/\..*//') -z $FRONTDOOR_DOMAIN -c $afdEndpoint
 ----
 +
 == Deploy an application
