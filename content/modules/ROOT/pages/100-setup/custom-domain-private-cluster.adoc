@@ -17,39 +17,6 @@ Furthermore, if we choose Custom DNS, after connecting to the cluster, we will n
 
 == Prerequisites
 
-. Set Up Necessary Tools
-
-* https://certbot.eff.org/[Certbot]
-
-.. Setup certbot on the Bastion Host
-+
-[source,bash,subs="+macros,+attributes",role=execute]
-----
-sudo yum install -y "https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm"
-sudo yum install -y certbot
-----
-
-* https://learn.microsoft.com/en-us/cli/azure/install-azure-cli[AZ CLI]
-
-* https://github.com/sshuttle/sshuttle#obtaining-sshuttle[sshutle]
-
-.. Install Sshuttle on your laptop
-
-... Linux
-+
-[source,bash,subs="+macros,+attributes",role=execute]
-----
-sudo yum install -y "https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm"
-sudo yum install -y sshuttle
-----
-
-... Mac
-+
-[source,bash,subs="+macros,+attributes",role=execute]
-----
-brew install sshuttle certbot
-----
-
 . Set and verify the following environment variables
 +
 [source,bash,subs="+macros,+attributes",role=execute]
@@ -301,7 +268,9 @@ AZ_SP_PASS=$(az ad sp create-for-rbac -n "${AZR_CLUSTER}-SP" --role contributor 
   --query "password" -o tsv)
 AZ_SP_ID=$(az ad sp list --display-name "${AZR_CLUSTER}-SP" --query "[0].appId" -o tsv)
 ----
-
++
+WARNING: The next step takes over 45 minutes to complete.
++
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 date # start time
@@ -565,6 +534,7 @@ ____
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 export SCRATCH_DIR=/tmp/scratch
+echo "SCRATCH_DIR=$SCRATCH_DIR" >> ~/.bashrc
 
 certbot certonly --manual \
   --preferred-challenges=dns \
