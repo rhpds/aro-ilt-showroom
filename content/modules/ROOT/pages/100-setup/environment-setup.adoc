@@ -90,11 +90,21 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc
 EOF
 ----
 +
-. Install Azure CLI and sshuttle
+NOTE: If you're using the bastion or another RHEL box, you'll also need all the following:
++
+. RHEL 9 EPEL
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-sudo dnf install -y azure-cli sshuttle
+sudo yum install -y "https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm"
+sudo yum install -y sshuttle
+----
+
+. Install Azure CLI, sshuttle, and certbot
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+sudo dnf install -y azure-cli sshuttle certbot
 ----
 +
 . Install OpenShift CLI
