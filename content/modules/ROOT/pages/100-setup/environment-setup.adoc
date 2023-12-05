@@ -60,6 +60,8 @@ chmod 700 get_helm.sh
 +
 . Install Terraform
 +
+Terraform is used by the Managed OpenShift Experts to automate much of their work.
+It's good to have it ready on your bastion, should you want to experiment with their work.
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
@@ -182,6 +184,14 @@ nano ~/Downloads/pull-secret.txt
 ----
 +
 . Paste the contents into the file.  Then hit kbd:[Ctrl+x] and hit kbd:[y] to approve writing changed file content, and then kbd:[Enter] to accept the filename and actually write and exit.
+
+== Congratulations!
+
+You're ready to start preparations for your first ARO cluster.
+
+Continue on to the next lab:
+
+xref:100-setup/custom-domain-private-cluster.adoc[Deploying Private ARO clusters with Custom Domains]
 
 == Appendix: Adding Quota to ARO account
 
