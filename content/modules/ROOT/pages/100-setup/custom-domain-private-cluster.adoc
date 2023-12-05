@@ -334,25 +334,59 @@ az vm create --name jumphost               \
 ----
 JUMP_IP=$(az vm list-ip-addresses -g $AZR_RESOURCE_GROUP -n jumphost -o tsv \
 --query '[].virtualMachine.network.publicIpAddresses[0].ipAddress')
-export $JUMP_IP
 echo $JUMP_IP
+export JUMP_IP=$JUMP_IP
 echo "export JUMP_IP=$JUMP_IP" >> $HOME/.bashrc
 ----
-
-. Use `sshuttle` on your Laptop to Create a SSH VPN via the Jump Host as a Daemon
++
+NOTE: Your ongoing work that access the cluster needs to be routed through the jump host.
+On both your bastion host, and on your laptop, we'll use sshuttle to access the cluster.
+sshuttle will route all packets sent to the `10.0.0.8/20` subnet through the jump host.
++
+. Let's start with the bastion.
+Just run the following command, and it should pick up the proper ssh keys and start sshuttle.
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 sshuttle --dns -NHr "aro@${JUMP_IP}" $NETWORK_SUBNET --daemon
 ----
 +
-****
-*If you are using the bastion*
+NOTE: To use your laptop's web browser to see the OpenShift console, you'll need to setup sshuttle on your laptop, too.
++
+. To setup `sshuttle` on your laptop
+.. Mac Laptops
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+if ! command -v brew &> /dev/null
+then
+   echo "Homebrew is not installed. Installing now..."
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+----
++
+.. Linux Laptops (RHEL)
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+#
+RHEL=$(rpm -E %rhel)
+sudo yum install -y "https://dl.fedoraproject.org/pub/epel/epel-release-latest-${RHEL}.noarch.rpm"
+sudo yum install -y sshuttle
+---
++
+** Windows Laptops
+.. Install sshuttle
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+choco install sshuttle
+----
++
+. Now you need to configure ssh to do private key authetnication to the jump host.
+Copy the private key that was generated on the bastion above to your laptop `~/.ssh/jumphost.pem`
 
-You'll want to run `sshuttle` on the bastion AND your laptop.
-
-. Copy the private key that was generated on the bastion above to your laptop `~/.ssh/jumphost.pem`
-. Add it to `~/.ssh/config`
+. Create an entry for the jump host in the file `~/.ssh/config`
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
@@ -360,7 +394,7 @@ Host <ip address of jumphost>
   IdentityFile ~/.ssh/jumphost.pem
 ----
 +
-. Run sshuttle on the bastion
+. Run sshuttle on the your laptop
 +
 NOTE: Make sure you can `ssh aro@$JUMP_IP` with no password.
 +
