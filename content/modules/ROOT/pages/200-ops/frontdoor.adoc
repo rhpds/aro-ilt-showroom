@@ -290,9 +290,9 @@ With ARO being a first class service on Azure, we will create an Azure Database 
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-az postgres server create --name microsweeper-database --resource-group $ARORG --location $LOCATION --admin-user quarkus --admin-password r3dh4t1! --sku-name GP_Gen5_2
+az postgres server create --name microsweeper-database-${GUID} --resource-group $ARORG --location $LOCATION --admin-user quarkus --admin-password r3dh4t1! --sku-name GP_Gen5_2
 
-POSTGRES_ID=$(az postgres server show -n microsweeper-database -g $ARORG --query 'id' -o tsv)
+POSTGRES_ID=$(az postgres server show -n microsweeper-database-${GUID} -g $ARORG --query 'id' -o tsv)
 ----
 
 . Create a private endpoint connection for the database
