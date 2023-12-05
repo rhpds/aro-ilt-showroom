@@ -278,9 +278,9 @@ Create a cname record for the application
 az network dns record-set cname set-record -g $ARORG -z $FRONTDOOR_DOMAIN \
 -n $(echo $ARO_APP_FQDN | sed 's/\..*//') -z $FRONTDOOR_DOMAIN -c $afdEndpoint
 ----
-+
+
 == Deploy an application
-+
+
 Now the fun part, let's deploy an application!
 We will be deploying a Java based application called https://github.com/redhat-mw-demos/microsweeper-quarkus/tree/ARO[microsweeper].
 This is an application that runs on OpenShift and uses a PostgreSQL database to store scores.
