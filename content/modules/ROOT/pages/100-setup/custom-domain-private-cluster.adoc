@@ -246,7 +246,7 @@ az aro create \
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 az aro get-versions
-export AZR_OCP_VERSION=$(az aro get-versions -ojson --query '[0]' -o tsv)
+export AZR_OCP_VERSION=$(az aro get-versions --location $AZR_RESOURCE_LOCATION -ojson --query '[0]' -o tsv)
 echo "export AZR_OCP_VERSION=$AZR_OCP_VERSION" >> ~/.bashrc
 echo $AZR_OCP_VERSION
 ----
