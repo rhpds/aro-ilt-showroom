@@ -338,21 +338,24 @@ echo $JUMP_IP
 export JUMP_IP=$JUMP_IP
 echo "export JUMP_IP=$JUMP_IP" >> $HOME/.bashrc
 ----
-+
-NOTE: Your ongoing work that access the cluster needs to be routed through the jump host.
+
+=== Setup sshuttle to gain access the cluster
+
+Your ongoing work that access the cluster needs to be routed through the jump host.
 On both your bastion host, and on your laptop, we'll use sshuttle to access the cluster.
 sshuttle will route all packets sent to the `10.0.0.8/20` subnet through the jump host.
-+
-. Let's start with the bastion.
-Just run the following command, and it should pick up the proper ssh keys and start sshuttle.
+
+Let's start with the bastion.
+
+. On the bastion, just run the following command, and it should pick up the proper ssh keys and start sshuttle.
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 sshuttle --dns -NHr "aro@${JUMP_IP}" $NETWORK_SUBNET --daemon
 ----
-+
-NOTE: To use your laptop's web browser to see the OpenShift console, you'll need to setup sshuttle on your laptop, too.
-+
+
+Now let's setup your laptop.
+
 . To setup `sshuttle` on your laptop
 .. Mac Laptops
 +
@@ -363,57 +366,85 @@ then
    echo "Homebrew is not installed. Installing now..."
    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
+brew install sshuttle
 ----
 +
 .. Linux Laptops (RHEL)
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-#
 RHEL=$(rpm -E %rhel)
 sudo yum install -y "https://dl.fedoraproject.org/pub/epel/epel-release-latest-${RHEL}.noarch.rpm"
 sudo yum install -y sshuttle
----
+----
 +
-** Windows Laptops
-.. Install sshuttle
+.. Windows Laptops
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 choco install sshuttle
 ----
-+
-. Now you need to configure ssh to do private key authetnication to the jump host.
+
+Now you need to configure ssh to do private key authetnication to the jump host.
 Copy the private key that was generated on the bastion above to your laptop `~/.ssh/jumphost.pem`
 
+. On the bastion, get the IP of the jump host on the bastion
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+echo $JUMP_IP
+----
++
+. On your laptop, put $JUMP_IP in your envronment
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+export JUMP_IP=**** paste the jump host IP here ****
+----
++
 . Create an entry for the jump host in the file `~/.ssh/config`
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-Host <ip address of jumphost>
+echo "Host ${JUMP_IP}
   IdentityFile ~/.ssh/jumphost.pem
+" >> ~/.ssh/config
 ----
 +
-. Run sshuttle on the your laptop
+. Create the `~/.ssh/jumphost.pem` file by copying it from the bastion to the `~/.ssh/jumphost.pem` file on your laptop.
 +
-NOTE: Make sure you can `ssh aro@$JUMP_IP` with no password.
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+nano ~/.ssh/jumphost.pem
+----
++
+. Write the file and close nano with kbd:[CTRL+x], then kbd:[y], then kbd:[ENTER]
++
+. You must also protect this private key file on your laptop by changing its permissions to 600
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+chmod 600 ~/.ssh/jumphost.pem
+----
++
+. Now test ssh to the jump host from your laptop
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+ssh aro@${JUMP_IP}
+----
++
+. You should be logged in OK to your jump host.
+Log out of the jump host and return to your laptop by typing `exit`.
++
+. Now you can use sshuttle to access the cluster from your latop.
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 sshuttle --dns -NHr "aro@${JUMP_IP}" 10.0.0.0/20 --daemon
 ----
-****
 +
-. Run sshuttle on your laptop
-+
-NOTE: Make sure you can `ssh aro@$JUMP_IP` with no password.
-+
-[source,bash,subs="+macros,+attributes",role=execute]
-----
-sshuttle --dns -NHr "aro@${JUMP_IP}"  10.0.0.0/20 --daemon
-----
-+
-. Return to the first terminal with the ARO installation to see if installation has finished by pressing kbd:[CTRL+b] then kbd:[n]
+. Return to bastion here on the terminal on the right. Switch to the first terminal with the ARO installation to see if installation has finished by pressing kbd:[CTRL+b] then kbd:[n]
 +
 . It has not finished.
 +
@@ -423,9 +454,8 @@ sshuttle --dns -NHr "aro@${JUMP_IP}"  10.0.0.0/20 --daemon
 ----
 +
 . Hit kbd:[CTRL+b] then kbd:[n] again to return to your second terminal.
-+
-. HOWEVER! If values you need are already available, `az aro` will report them.
-ONWARDS!
+
+Your bastion host and laptop are now ready to access the private cluster that is being deployed right now.
 
 == Configure DNS for the Private ARO Cluster (Ingress Router and API)
 
