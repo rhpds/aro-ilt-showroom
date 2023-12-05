@@ -57,6 +57,16 @@ curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scrip
 chmod 700 get_helm.sh
 ./get_helm.sh
 ----
++
+. Install Terraform
++
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+sudo yum install -y yum-utils
+sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+sudo yum -y install terraform
+----
 
 == Validate Command Line Tools
 
