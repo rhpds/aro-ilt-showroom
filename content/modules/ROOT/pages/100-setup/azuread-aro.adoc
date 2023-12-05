@@ -179,7 +179,7 @@ If you are using Azure Firewall, you can run those commands to allow this access
 
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-az network firewall network-rule create -g $AZR_AZR_RESOURCE_GROUP -f aro-private   \
+az network firewall network-rule create -g $AZR_RESOURCE_GROUP -f aro-private   \
     --collection-name 'Allow_Microsoft_Graph' --action allow --priority 100     \
     -n 'Microsoft_Graph' --source-address '*' --protocols 'any'                 \
     --source-addresses '*' --destination-fqdns 'graph.microsoft.com'            \
