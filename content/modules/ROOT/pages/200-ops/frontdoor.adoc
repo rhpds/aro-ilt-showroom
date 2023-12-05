@@ -69,9 +69,9 @@ LBCONFIG_ID=$(az network lb frontend-ip list -g $ARO_RGNAME --lb-name $INTERNAL_
 
 LBCONFIG_IP=$(az network lb frontend-ip list -g $ARO_RGNAME --lb-name $INTERNAL_LBNAME --query "[? contains(subnet.id,'$WORKER_SUBNET_ID')].privateIPAddress" -o tsv)
 ----
-+
+
 == Create a Private Link Service
-+
+
 After we have the cluster up and running, we need to create a private link service.
 The private link service will provide private and secure connectivity between the Front Door Service and our cluster.
 
