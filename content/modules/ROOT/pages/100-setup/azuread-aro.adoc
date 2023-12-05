@@ -213,3 +213,10 @@ oc create clusterrolebinding cluster-admin-user \
 ----
 
 For more information on how to use RBAC to define and apply permissions in OpenShift, see https://docs.openshift.com/container-platform/latest/authentication/using-rbac.html[the OpenShift documentation].
+
+== Congratulations!
+
+You've got Azure Active Directory setup for OpenShift!
+
+Take a break, or move on to the final Day 1 lab:
+xref:100-setup/azure-key-vault.adoc[Key Vault CSI]

@@ -217,3 +217,10 @@ kube-state-metrics-574c5bfdd7-f7fjk            3/3     Running   0          2m49
 ...
 ...
 ----
+
+== Congratulations!
+
+You've finished adding infrastructure nodes to an ARO cluster
+
+Let's move on to the next lab:
+xref:200-ops/frontdoor.adoc[Azure Front Door with ARO]

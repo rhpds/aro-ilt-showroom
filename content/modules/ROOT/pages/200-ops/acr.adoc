@@ -263,4 +263,11 @@ oc create -n test-acr deployment httpd --image=$REGISTRY_FQDN/centos7/httpd-24-c
 oc get pod -n test-acr
 ----
 +
-It should work, deploying the container image in the Private ARO cluster.
+You should now be deploying the container image in the Private ARO cluster.
+
+== Congratulations!
+
+You've completed setting up Azure Container Registry (ACR) in Private ARO clusters
+
+Let's move onto the next lab:
+xref:200-ops/frontdoor.adoc[Azure Front Door with ARO]

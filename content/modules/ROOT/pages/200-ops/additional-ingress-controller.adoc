@@ -23,7 +23,7 @@ INGRESS_DOMAIN=custom.$DOMAIN_PARENT
 SCRATCH_DIR=/tmp/aro
 ----
 +
-. Start a tmux session if you're not already in one. 
+. Start a tmux session if you're not already in one.
 Rejoin your tmux session after connection loss with `tmux a`.
 +
 [source,bash,subs="+macros,+attributes",role=execute]
@@ -257,3 +257,10 @@ curl https://hello.$INGRESS_DOMAIN
 ----
 Hello OpenShift!
 ----
+
+== Congratulations
+
+You've completed adding an additional ingress controller to an ARO cluster
+
+Let's move onto the next lab:
+xref:200-ops/acr.adoc[Using Azure Container Registry in Private ARO clusters]

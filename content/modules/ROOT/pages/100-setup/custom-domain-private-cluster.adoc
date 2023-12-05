@@ -936,3 +936,5 @@ oc debug -- curl -v https://redhat.com
 Your cluster is ready.
 
 Let's move on to setting up AAD so you can login to ARO with your own username and password.
+
+-> xref:100-setup/azuread-aro.adoc[Configure ARO to use Azure AD]

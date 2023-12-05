@@ -224,6 +224,15 @@ Output should match:
 Hello
 ----
 
+== Congratulations!
+
+You've finished setting up Key Vault and Azure Key Vault CSI.
+
+That's it for our Day 1 labs.
+
+Feel free to move onto Day 2:
+xref:200-ops/additional-ingress-controller.adoc[Adding an additional ingress controller to an ARO cluster]
+
 ////
 == Cleanup
 

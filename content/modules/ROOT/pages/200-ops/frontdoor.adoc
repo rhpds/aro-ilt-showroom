@@ -51,23 +51,23 @@ PRIVATEENDPOINTSUBNET_NAME=PrivateEndpoint-subnet-$GUID
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-UNIQUEID=$GUID
+export UNIQUEID=$GUID
 
-ARO_RGNAME=$(az aro show -n $AROCLUSTER -g $ARORG --query "clusterProfile.resourceGroupId" -o tsv | sed 's/.*\///')
+export ARO_RGNAME=$(az aro show -n $AROCLUSTER -g $ARORG --query "clusterProfile.resourceGroupId" -o tsv | sed 's/.*\///')
 
-LOCATION=$(az aro show --name $AROCLUSTER --resource-group $ARORG --query location -o tsv)
+export LOCATION=$(az aro show --name $AROCLUSTER --resource-group $ARORG --query location -o tsv)
 
-INTERNAL_LBNAME=$(az network lb list --resource-group $ARO_RGNAME --query "[? contains(name, 'internal')].name" -o tsv)
+export INTERNAL_LBNAME=$(az network lb list --resource-group $ARO_RGNAME --query "[? contains(name, 'internal')].name" -o tsv)
 
-WORKER_SUBNET_NAME=$(az aro show --name $AROCLUSTER --resource-group $ARORG --query 'workerProfiles[0].subnetId' -o tsv | sed 's/.*\///')
+export WORKER_SUBNET_NAME=$(az aro show --name $AROCLUSTER --resource-group $ARORG --query 'workerProfiles[0].subnetId' -o tsv | sed 's/.*\///')
 
-WORKER_SUBNET_ID=$(az aro show --name $AROCLUSTER --resource-group $ARORG --query 'workerProfiles[0].subnetId' -o tsv)
+export WORKER_SUBNET_ID=$(az aro show --name $AROCLUSTER --resource-group $ARORG --query 'workerProfiles[0].subnetId' -o tsv)
 
-VNET_NAME=$(az network vnet list -g $ARORG --query '[0].name' -o tsv)
+export VNET_NAME=$(az network vnet list -g $ARORG --query '[0].name' -o tsv)
 
-LBCONFIG_ID=$(az network lb frontend-ip list -g $ARO_RGNAME --lb-name $INTERNAL_LBNAME --query "[? contains(subnet.id,'$WORKER_SUBNET_ID')].id" -o tsv)
+export LBCONFIG_ID=$(az network lb frontend-ip list -g $ARO_RGNAME --lb-name $INTERNAL_LBNAME --query "[? contains(subnet.id,'$WORKER_SUBNET_ID')].id" -o tsv)
 
-LBCONFIG_IP=$(az network lb frontend-ip list -g $ARO_RGNAME --lb-name $INTERNAL_LBNAME --query "[? contains(subnet.id,'$WORKER_SUBNET_ID')].privateIPAddress" -o tsv)
+export LBCONFIG_IP=$(az network lb frontend-ip list -g $ARO_RGNAME --lb-name $INTERNAL_LBNAME --query "[? contains(subnet.id,'$WORKER_SUBNET_ID')].privateIPAddress" -o tsv)
 ----
 +
 == Create a Private Link Service
@@ -182,12 +182,12 @@ az network private-endpoint-connection approve \
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 az afd custom-domain create \
- --certificate-type ManagedCertificate \
- --custom-domain-name $AFD_MINE_CUSTOM_DOMAIN_NAME \
- --host-name $ARO_APP_FQDN \
- --minimum-tls-version TLS12 \
- --profile-name $AFD_NAME \
- --resource-group $ARORG
+  --certificate-type ManagedCertificate \
+  --custom-domain-name $AFD_MINE_CUSTOM_DOMAIN_NAME \
+  --host-name $ARO_APP_FQDN \
+  --minimum-tls-version TLS12 \
+  --profile-name $AFD_NAME \
+  --resource-group $ARORG
 ----
 
 . Create an Azure Front Door endpoint for your custom domain
@@ -195,10 +195,10 @@ az afd custom-domain create \
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 az afd endpoint create \
- --resource-group $ARORG \
- --enabled-state Enabled \
- --endpoint-name 'aro-mine-'$UNIQUEID \
- --profile-name $AFD_NAME
+  --resource-group $ARORG \
+  --enabled-state Enabled \
+  --endpoint-name 'aro-mine-'$UNIQUEID \
+  --profile-name $AFD_NAME
 ----
 
 . Add an Azure Front Door route for your custom domain
@@ -206,16 +206,16 @@ az afd endpoint create \
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 az afd route create \
- --endpoint-name 'aro-mine-'$UNIQUEID \
- --forwarding-protocol HttpOnly \
- --https-redirect Disabled \
- --origin-group 'afdorigin' \
- --profile-name $AFD_NAME \
- --resource-group $ARORG \
- --route-name 'aro-mine-route' \
- --supported-protocols Http Https \
- --patterns-to-match '/*' \
- --custom-domains $AFD_MINE_CUSTOM_DOMAIN_NAME
+  --endpoint-name 'aro-mine-'$UNIQUEID \
+  --forwarding-protocol HttpOnly \
+  --https-redirect Disabled \
+  --origin-group 'afdorigin' \
+  --profile-name $AFD_NAME \
+  --resource-group $ARORG \
+  --route-name 'aro-mine-route' \
+  --supported-protocols Http Https \
+  --patterns-to-match '/*' \
+  --custom-domains $AFD_MINE_CUSTOM_DOMAIN_NAME
 ----
 
 . Update DNS
@@ -225,11 +225,11 @@ Get a validation token from Front Door so Front Door can validate your domain
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 afdToken=$(az afd custom-domain show \
- --resource-group $ARORG \
- --profile-name $AFD_NAME \
- --custom-domain-name $AFD_MINE_CUSTOM_DOMAIN_NAME \
- --query "validationProperties.validationToken" \
- -o tsv)
+  --resource-group $ARORG \
+  --profile-name $AFD_NAME \
+  --custom-domain-name $AFD_MINE_CUSTOM_DOMAIN_NAME \
+  --query "validationProperties.validationToken" \
+  -o tsv)
 ----
 
 . Create a DNS Zone
@@ -248,7 +248,11 @@ Create a new text record in your DNS server
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-az network dns record-set txt add-record -g $ARORG -z $FRONTDOOR_DOMAIN -n _dnsauth.$(echo $ARO_APP_FQDN | sed 's/\..*//') --value $afdToken --record-set-name _dnsauth.$(echo $ARO_APP_FQDN | sed 's/\..*//')
+az network dns record-set txt add-record \
+  -g $ARORG \
+  -z $FRONTDOOR_DOMAIN \
+  -n _dnsauth.$(echo $ARO_APP_FQDN | sed 's/\..*//') \
+  --value $afdToken --record-set-name _dnsauth.$(echo $ARO_APP_FQDN | sed 's/\..*//')
 ----
 
 . Check if the domain has been validated:
@@ -534,3 +538,10 @@ To clean up everything you created, simply delete the resource group
 ----
 az group delete -g $ARORG
 ----
+
+== Congratulations!
+
+You've completed setting up and testing Azure Front Door with ARO
+
+Move onto the next lab:
+xref:200-ops/add-infra-nodes.adoc[Adding infrastructure nodes to an ARO cluster]
