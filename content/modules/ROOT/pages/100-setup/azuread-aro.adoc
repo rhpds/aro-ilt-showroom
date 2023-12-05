@@ -35,7 +35,7 @@ echo 'OAuth callback URL: '$(az aro show -g $AZR_RESOURCE_GROUP -n $AZR_CLUSTER 
 === Register a new application in Azure AD
 
 . Create the Azure AD application itself.
-To do so, login to the Azure portal, and navigate to https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade[App registrations blade], then click on btn:[New registration] to create a new application.
+To do so, login to the Azure portal, and navigate to https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade[App registrations blade^], then click on btn:[New registration] to create a new application.
 +
 image::azure-portal_app-registrations-blade.png[Azure Portal - App registrations blade^]
 +
