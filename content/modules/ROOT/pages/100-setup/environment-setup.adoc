@@ -2,11 +2,7 @@
 
 == Environment Access
 
-You can access the environment in the following ways:
-
-* <<Showroom Terminal>>
-* <<SSH from your laptop to the bastion host>>
-* <<Run commands from your laptop>>
+We will setup the bastion host on the right by setting up the environment variables and installing tools.
 
 === Showroom Terminal
 
@@ -16,26 +12,9 @@ This should automatically SSH into the bastion host for your environment.
 
 If not, notify your instructor.
 
-=== SSH from your laptop to the bastion host
-
-Go ahead and use your favorite terminal on your laptop to access the bastion host.
-
-[source,bash,subs="+macros,+attributes",role=execute]
-----
-{bastion_ssh_command}
-----
-
-.Bastion SSH password
-[source,bash,subs="+macros,+attributes",role=execute]
-----
-{bastion_ssh_password}
-----
-
-=== Run commands from your laptop
-
-. You'll need to install `az` tools, if you don't have them.  See below.
-
 == Tools Setup - Overview
+
+Learn more about the command line tools we will install below.
 
 The Azure command line utility `az`::
  https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-macos[Azure Docs]
@@ -51,58 +30,13 @@ Shuttle, a great tool for using jumphosts easily::
 Certbot::
  https://certbot.eff.org
 
-=== MacOS
-
-. Install all the tools in one shot using homebrew.
-Should work! :D
-+
-[source,bash,subs="+macros,+attributes",role=execute]
-----
-brew update && brew install openshift-cli azure-cli helm sshuttle certbot
-----
-
-=== On RHEL 9
-
-WARNING: The bastion already has the `az` tools installed.
-Skip this if you are using the bastion.
-
-NOTE: See https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-linux?pivots=dnf[Azure Docs] for alternative install options.
-
-. Import the Microsoft Keys
-+
-[source,bash,subs="+macros,+attributes",role=execute]
-----
-sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
-----
-+
-. Add the Microsoft Yum Repository
-+
-[source,bash,subs="+macros,+attributes",role=execute]
-----
-cat << EOF | sudo tee /etc/yum.repos.d/azure-cli.repo
-[azure-cli]
-name=Azure CLI
-baseurl=https://packages.microsoft.com/yumrepos/azure-cli
-enabled=1
-gpgcheck=1
-gpgkey=https://packages.microsoft.com/keys/microsoft.asc
-EOF
-----
-+
-NOTE: If you're using the bastion or another RHEL box, you'll also need all the following:
-+
-. RHEL 9 EPEL
-+
-[source,bash,subs="+macros,+attributes",role=execute]
-----
-sudo yum install -y "https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm"
-sudo yum install -y sshuttle
-----
+=== Install Tools
 
 . Install Azure CLI, sshuttle, and certbot
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
+sudo yum install -y "https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm"
 sudo dnf install -y azure-cli sshuttle certbot
 ----
 +
@@ -197,6 +131,8 @@ az account set --subscription $AZ_SUB_ID
 +
 . Set the default location to `East US`
 +
+By setting the default location, you will be able to leave the `--location` parameter out of the command line for future interactions.
++
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 az configure --defaults location=$AZR_RESOURCE_LOCATION
@@ -209,7 +145,7 @@ az configure --defaults location=$AZR_RESOURCE_LOCATION
 cat <(az vm list-usage -o table | head -2) <(az vm list-usage -o table | grep " DSv3")
 ----
 +
-WARNING: See <<Adding Quota to ARO account>> if you have less than `100` Quota left for `Total Regional vCPUs`.
+WARNING: If you have less than `100` Quota left for `Total Regional vCPUs `see <<Adding Quota to ARO account>> .
 +
 . Register Resource Providers
 +
@@ -226,9 +162,18 @@ az provider register -n Microsoft.Authorization --wait
 . Log into cloud.redhat.com
 . Browse to https://cloud.redhat.com/openshift/install/azure/aro-provisioned[https://cloud.redhat.com/openshift/install/azure/aro-provisioned^]
 . Click the *Download pull secret* button
-. Copy the file to `~/Downloads/pull-secret.txt` wherever you are running the `az` command line tools
+. Open the pull secrets file and copy the contents.
+. Create a new file on the bastion and paste the pull secret into it.
++
+[source,bash,subs="+macros,+attributes",role=execute]
+----
+mkdir ~/Downloads
+nano ~/Downloads/pull-secret.txt
+----
++
+. Paste the contents into the file.  Then hit kbd:[Ctrl+x] and hit kbd:[y] to approve writing changed file content, and then kbd:[Enter] to accept the filename and actually write and exit.
 
-== Adding Quota to ARO account
+== Appendix: Adding Quota to ARO account
 
 image::aro-quota-request.png[ARO Console "My Quotas" page with cursor hovering over "Request Adjustment" pencil for a quota named "Total Regional vCPUs"]
 
