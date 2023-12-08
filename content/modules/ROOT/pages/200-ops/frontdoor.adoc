@@ -69,9 +69,9 @@ export LBCONFIG_ID=$(az network lb frontend-ip list -g $ARO_RGNAME --lb-name $IN
 
 export LBCONFIG_IP=$(az network lb frontend-ip list -g $ARO_RGNAME --lb-name $INTERNAL_LBNAME --query "[? contains(subnet.id,'$WORKER_SUBNET_ID')].privateIPAddress" -o tsv)
 ----
-+
+
 == Create a Private Link Service
-+
+
 After we have the cluster up and running, we need to create a private link service.
 The private link service will provide private and secure connectivity between the Front Door Service and our cluster.
 
@@ -282,9 +282,9 @@ Create a cname record for the application
 az network dns record-set cname set-record -g $ARORG -z $FRONTDOOR_DOMAIN \
 -n $(echo $ARO_APP_FQDN | sed 's/\..*//') -z $FRONTDOOR_DOMAIN -c $afdEndpoint
 ----
-+
+
 == Deploy an application
-+
+
 Now the fun part, let's deploy an application!
 We will be deploying a Java based application called https://github.com/redhat-mw-demos/microsweeper-quarkus/tree/ARO[microsweeper].
 This is an application that runs on OpenShift and uses a PostgreSQL database to store scores.
@@ -294,9 +294,9 @@ With ARO being a first class service on Azure, we will create an Azure Database 
 +
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
-az postgres server create --name microsweeper-database --resource-group $ARORG --location $LOCATION --admin-user quarkus --admin-password r3dh4t1! --sku-name GP_Gen5_2
+az postgres server create --name microsweeper-database-${GUID} --resource-group $ARORG --location $LOCATION --admin-user quarkus --admin-password r3dh4t1! --sku-name GP_Gen5_2
 
-POSTGRES_ID=$(az postgres server show -n microsweeper-database -g $ARORG --query 'id' -o tsv)
+POSTGRES_ID=$(az postgres server show -n microsweeper-database-${GUID} -g $ARORG --query 'id' -o tsv)
 ----
 
 . Create a private endpoint connection for the database
