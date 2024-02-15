@@ -117,6 +117,8 @@ oc create secret generic openid-client-secret --from-literal=clientSecret=${CLIE
 . Next, generate the necessary YAML for the cluster's OAuth provider to use Azure AD as its identity provider.
 To do so, run the following command, making sure to replace the variables specified:
 +
+azure-get-app-info.png[Azure Portal - Get Application Info] image:./images/
++
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 IDP_NAME=AAD # Replace this with the name you used in the OAuth callback URL

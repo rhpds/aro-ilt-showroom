@@ -81,6 +81,8 @@ oc new-project my-application
 
 . Create an Azure Keyvault in your Resource Group that contains ARO
 +
+NOTE: It may take a few minutes for this command to complete **and** even once completed may take a few more minutes before you can run the `az set-policy` successfully.
++
 [source,bash,subs="+macros,+attributes",role=execute]
 ----
 az keyvault create -n ${KEYVAULT_NAME} \
